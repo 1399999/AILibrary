@@ -66,4 +66,38 @@ public static class NueronUtilities
 
         return output;
     }
+
+    public static float[][] MatrixMultiply(this float[][] array1, float[][] array2)
+    {
+        if (array1 == null || array2 == null)
+            throw new ArgumentNullException("Matrices cannot be null");
+
+        int rowsA = array1.Length;
+        int colsA = array1[0].Length;
+        int rowsB = array2.Length;
+        int colsB = array2[0].Length;
+
+        if (colsA != rowsB)
+            throw new ArgumentException("Number of columns in array1 must match number of rows in array2.");
+
+        float[][] result = new float[rowsA][];
+
+        for (int i = 0; i < rowsA; i++)
+        {
+            result[i] = new float[colsB];
+
+            for (int j = 0; j < colsB; j++)
+            {
+                float sum = 0;
+
+                for (int k = 0; k < colsA; k++)
+                {
+                    sum += array1[i][k] * array2[k][j];
+                }
+                result[i][j] = sum;
+            }
+        }
+
+        return result;
+    }
 }

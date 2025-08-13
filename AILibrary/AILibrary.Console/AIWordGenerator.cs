@@ -60,9 +60,10 @@ public static class AIWordGenerator
 
         var emb = blockSizeWords.MatrixIndexInto(nueralNet);
 
-        var weights = RandomNeuron.CreateRandomNeurons(blockSize * 2, 100, false); // W1
+        var weights1 = RandomNeuron.CreateRandomNeurons(blockSize * 2, 100, false); // W1
         var biases = RandomNeuron.CreateRandomNeurons(100, false); // b1
 
-        var newList = emb.Flatten3DTo2DArrayZToY();
+        var kiloList = emb.Flatten3DTo2DArrayZToY();
+        var megaList = kiloList.MatrixMultiply(weights1);
     }
 }
