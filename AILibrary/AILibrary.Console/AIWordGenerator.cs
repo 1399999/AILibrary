@@ -29,7 +29,7 @@ public static class AIWordGenerator
 
         for (int i = 0; i < words.Length && i < 5; i++)
         {
-            Console.WriteLine(words[i]);
+            //Console.WriteLine(words[i]);
 
             string word = string.Empty;
 
@@ -47,12 +47,12 @@ public static class AIWordGenerator
 
                 for (int k = 0; k < blockSize; k++)
                 {
-                    Console.Write(word[j + k]);
+                    //Console.Write(word[j + k]);
                     blockSizeWords[l][k] = SystemModel.AlphabetNumbers[word[j + k]];
                 }
 
-                Console.Write(" ---> ");
-                Console.WriteLine(word[j + blockSize]);
+                //Console.Write(" ---> ");
+                //Console.WriteLine(word[j + blockSize]);
             }
         }
 
@@ -72,7 +72,8 @@ public static class AIWordGenerator
         var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, false); // b2
 
         var logits = tanhList.MatrixMultiply(weights2).OffsetArray(biases2);
-        var counts = logits.Exponentiate();
-        var prob = counts.DivideArray(counts.GetArraySum());
+        float loss = logits.CrossEntropy(allWords);
+
+        Console.WriteLine(loss);
     }
 }
