@@ -58,9 +58,11 @@ public static class AIWordGenerator
 
         float[][] nueralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, false); // C
 
-        var emb = blockSizeWords.MatrixMultiplyIndexInto(nueralNet);
+        var emb = blockSizeWords.MatrixIndexInto(nueralNet);
 
         var weights = RandomNeuron.CreateRandomNeurons(blockSize * 2, 100, false); // W1
         var biases = RandomNeuron.CreateRandomNeurons(100, false); // b1
+
+        var newList = emb.Flatten3DTo2DArrayZToY();
     }
 }
