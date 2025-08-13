@@ -100,4 +100,25 @@ public static class NueronUtilities
 
         return result;
     }
+
+    public static float[][] OffsetBy(this float[][] array1, float[] array2) // Dimenions: 32x100 + 100
+    {
+        float[][] output = new float[array1.Length][];
+        Array.Copy(array1, output, array1.Length);
+
+        if (array1[0].Length != array2.Length)
+        {
+            throw new ArgumentException();
+        }
+
+        for (int i = 0; i < array1.Length; i++) 
+        {
+            for (int j = 0; j < array2.Length; j++)
+            {
+                output[i][j] += array2[j];
+            }
+        }
+
+        return output;
+    }
 }

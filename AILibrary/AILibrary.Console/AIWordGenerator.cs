@@ -65,5 +65,6 @@ public static class AIWordGenerator
 
         var kiloList = emb.Flatten3DTo2DArrayZToY();
         var megaList = kiloList.MatrixMultiply(weights1);
+        var gigaList = megaList.OffsetBy(biases);
     }
 }
