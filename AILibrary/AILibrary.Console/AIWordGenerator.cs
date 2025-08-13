@@ -2,14 +2,14 @@
 
 public static class AIWordGenerator
 {
-    static Dictionary<char, int> alphabetNumbers = new(); // stoi
+     // stoi
     static int blockSize = 3;
 
     public static void GenerateWord()
     {
         for (int i = 0; i < SystemModel.Alphabet.Length; i++)
         {
-            alphabetNumbers.Add(SystemModel.Alphabet[i], i);
+            SystemModel.AlphabetNumbers.Add(SystemModel.Alphabet[i], i);
         }
 
         string[] words = File.ReadAllLines("C:\\AITrainingSets\\Names.txt");
@@ -20,7 +20,7 @@ public static class AIWordGenerator
         {
             for (int j = 0; j < words[i].Length; j++)
             {
-                allWordsTemp.Add(alphabetNumbers[words[i][j]]);
+                allWordsTemp.Add(SystemModel.AlphabetNumbers[words[i][j]]);
             }
 
             allWordsTemp.Add(0);
@@ -54,12 +54,14 @@ public static class AIWordGenerator
                 for (int k = 0; k < blockSize; k++)
                 {
                     Console.Write(word[j + k]);
-                    blockSizeWords[l][k] = alphabetNumbers[word[j + k]];
+                    blockSizeWords[l][k] = SystemModel.AlphabetNumbers[word[j + k]];
                 }
 
                 Console.Write(" ---> ");
                 Console.WriteLine(word[j + blockSize]);
             }
         }
+
+        double[][] nueralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, false); // C
     }
 }
