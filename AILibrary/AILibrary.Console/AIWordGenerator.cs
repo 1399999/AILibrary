@@ -56,6 +56,11 @@ public static class AIWordGenerator
             }
         }
 
-        double[][] nueralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, false); // C
+        float[][] nueralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, false); // C
+
+        var emb = blockSizeWords.MatrixMultiplyIndexInto(nueralNet);
+
+        var weights = RandomNeuron.CreateRandomNeurons(blockSize * 2, 100, false); // W1
+        var biases = RandomNeuron.CreateRandomNeurons(100, false); // b1
     }
 }

@@ -2,4 +2,4 @@
 
 using AILibrary;
 
-BigramRandomWordGenerator.RunExample();
+AIWordGenerator.GenerateWord();
