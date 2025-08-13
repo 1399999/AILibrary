@@ -61,38 +61,5 @@ public static class AIWordGenerator
                 Console.WriteLine(word[j + blockSize]);
             }
         }
-
-
-    }
-
-    public static double[] CreateRandomNeurons(int x, bool useSeed, int seed = 0)
-    {
-        NormalRandom rng = useSeed ? new NormalRandom(seed) : new NormalRandom();
-
-        double[] output = new double[x];
-
-        for (int i = 0; i < x; i++)
-        {
-            output[i] = rng.NextStandardNormal();
-        }
-
-        return output;
-    }
-
-    public static double[][] CreateRandomNeurons(int x, int y, bool useSeed, int seed = 0)
-    {
-        NormalRandom rng = useSeed ? new NormalRandom(seed) : new NormalRandom();
-
-        double[][] output = new double[x][];
-
-        for (int i = 0; i < x; i++)
-        {
-            for (int j = 0; j < x; j++)
-            {
-                output[i][j] = rng.NextStandardNormal();
-            }
-        }
-
-        return output;
     }
 }
