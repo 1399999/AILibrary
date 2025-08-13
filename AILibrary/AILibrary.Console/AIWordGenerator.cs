@@ -10,7 +10,7 @@ public static class AIWordGenerator
 
         List<int> allWordsTemp = new List<int>();
 
-        for (int i = 0; i < words.Length; i++)
+        for (int i = 0; i < words.Length && i < 5; i++)
         {
             for (int j = 0; j < words[i].Length; j++)
             {
@@ -61,11 +61,18 @@ public static class AIWordGenerator
         var emb = blockSizeWords.MatrixIndexInto(nueralNet);
 
         var weights1 = RandomNeuron.CreateRandomNeurons(blockSize * 2, 100, false); // W1
-        var biases = RandomNeuron.CreateRandomNeurons(100, false); // b1
+        var biases1 = RandomNeuron.CreateRandomNeurons(100, false); // b1
 
         var kiloList = emb.Flatten3DTo2DArrayZToY();
         var megaList = kiloList.MatrixMultiply(weights1);
-        var gigaList = megaList.OffsetBy(biases);
+        var gigaList = megaList.OffsetArray(biases1);
         var tanhList = gigaList.GetTanh(); // h
+
+        var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, false); // W2
+        var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, false); // b2
+
+        var logits = tanhList.MatrixMultiply(weights2).OffsetArray(biases2);
+        var counts = logits.Exponentiate();
+        var prob = counts.DivideArray(counts.GetArraySum());
     }
 }

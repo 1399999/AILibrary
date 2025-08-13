@@ -44,7 +44,6 @@ public class RandomNeuron
     public static float[] CreateRandomNeurons(int x, bool useSeed, int seed = 0)
     {
         RandomNeuron rng = useSeed ? new RandomNeuron(seed) : new RandomNeuron();
-
         float[] output = new float[x];
 
         for (int i = 0; i < x; i++)
@@ -58,7 +57,6 @@ public class RandomNeuron
     public static float[][] CreateRandomNeurons(int x, int y, bool useSeed, int seed = 0)
     {
         RandomNeuron rng = useSeed ? new RandomNeuron(seed) : new RandomNeuron();
-
         float[][] output = new float[x][];
 
         for (int i = 0; i < x; i++)

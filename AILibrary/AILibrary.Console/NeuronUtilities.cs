@@ -80,11 +80,11 @@ public static class NueronUtilities
         if (colsA != rowsB)
             throw new ArgumentException("Number of columns in array1 must match number of rows in array2.");
 
-        float[][] result = new float[rowsA][];
+        float[][] output = new float[rowsA][];
 
         for (int i = 0; i < rowsA; i++)
         {
-            result[i] = new float[colsB];
+            output[i] = new float[colsB];
 
             for (int j = 0; j < colsB; j++)
             {
@@ -94,14 +94,15 @@ public static class NueronUtilities
                 {
                     sum += array1[i][k] * array2[k][j];
                 }
-                result[i][j] = sum;
+
+                output[i][j] = sum;
             }
         }
 
-        return result;
+        return output;
     }
 
-    public static float[][] OffsetBy(this float[][] array1, float[] array2) // Dimenions: 32x100 + 100
+    public static float[][] OffsetArray(this float[][] array1, float[] array2) // Dimenions: 32x100 + 100
     {
         float[][] output = new float[array1.Length][];
         Array.Copy(array1, output, array1.Length);
@@ -125,26 +126,75 @@ public static class NueronUtilities
     public static float[][] GetTanh(this float[][] input)
     {
         if (input == null || input.Length == 0)
+        {
             return Array.Empty<float[]>();
+        }
 
         int rows = input.Length;
         int cols = input[0].Length;
 
-        float[][] result = new float[rows][];
+        float[][] output = new float[rows][];
 
         for (int i = 0; i < rows; i++)
         {
-            result[i] = new float[cols];
+            output[i] = new float[cols];
 
             for (int j = 0; j < cols; j++)
             {
                 float x = input[i][j];
                 // More numerically stable than direct formula for large x
                 double e2x = Math.Exp(2 * x);
-                result[i][j] = (float)((e2x - 1) / (e2x + 1));
+                output[i][j] = (float)((e2x - 1) / (e2x + 1));
             }
         }
 
-        return result;
+        return output;
+    }
+
+    public static float[][] Exponentiate(this float[][] input)
+    {
+        float[][] output = new float[input.Length][];
+        Array.Copy(input, output, input.Length);
+
+        for (int i = 0; i < input.Length; i++)
+        {
+            for (int j = 0; j < input[i].Length; j++)
+            {
+                output[i][j] = (float) Math.Log(input[i][j]);
+            }
+        }
+
+        return output;
+    }
+
+    public static float[][] DivideArray(this float[][] input, float[] divider)
+    {
+        float[][] output = new float[input.Length][];
+        Array.Copy(input, output, input.Length);
+
+        for (int i = 0; i < input.Length; i++)
+        {
+            for (int j = 0; j < input[i].Length; j++)
+            {
+                output[i][j] = input[i][j] / divider[j];
+            }
+        }
+
+        return output;
+    }
+
+    public static float[] GetArraySum(this float[][] input)
+    {
+        float[] output = new float[input.Length];
+
+        for (int i = 0; i < input.Length; i++)
+        {
+            for (int j = 0; j < input[i].Length; j++)
+            {
+                output[i] += input[i][j];
+            }
+        }
+
+        return output;
     }
 }
