@@ -121,4 +121,30 @@ public static class NueronUtilities
 
         return output;
     }
+
+    public static float[][] GetTanh(this float[][] input)
+    {
+        if (input == null || input.Length == 0)
+            return Array.Empty<float[]>();
+
+        int rows = input.Length;
+        int cols = input[0].Length;
+
+        float[][] result = new float[rows][];
+
+        for (int i = 0; i < rows; i++)
+        {
+            result[i] = new float[cols];
+
+            for (int j = 0; j < cols; j++)
+            {
+                float x = input[i][j];
+                // More numerically stable than direct formula for large x
+                double e2x = Math.Exp(2 * x);
+                result[i][j] = (float)((e2x - 1) / (e2x + 1));
+            }
+        }
+
+        return result;
+    }
 }
