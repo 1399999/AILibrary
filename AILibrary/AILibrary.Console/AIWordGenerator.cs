@@ -2,16 +2,10 @@
 
 public static class AIWordGenerator
 {
-     // stoi
     static int blockSize = 3;
 
     public static void GenerateWord()
     {
-        for (int i = 0; i < SystemModel.Alphabet.Length; i++)
-        {
-            SystemModel.AlphabetNumbers.Add(SystemModel.Alphabet[i], i);
-        }
-
         string[] words = File.ReadAllLines("C:\\AITrainingSets\\Names.txt");
 
         List<int> allWordsTemp = new List<int>();
