@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AILibrary.Console", "AILibrary.Console\AILibrary.Console.csproj", "{3AE80BF9-1068-4CD9-B5DE-EFC9DA7A9163}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AILibrary", "AILibrary.Console\AILibrary.csproj", "{3AE80BF9-1068-4CD9-B5DE-EFC9DA7A9163}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
