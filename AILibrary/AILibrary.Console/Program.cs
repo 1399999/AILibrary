@@ -2,4 +2,4 @@
 
 using AILibrary;
 
-AIWordGenerator.GenerateWord();
+TrainedAIWordGenerator.GenerateWord();

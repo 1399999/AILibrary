@@ -234,4 +234,7 @@ public static class NueronUtilities
 
         return (float)(totalLoss / numSamples);
     }
+
+    public static long Nelement(this float[][] array) => (long)array.Length * array[0].Length;
+    public static long Nelement(this float[] array) => (long)array.Length;
 }
