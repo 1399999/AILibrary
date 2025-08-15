@@ -31,4 +31,32 @@ public class Tensor
         ThreeDimValue = list;
         Dimensions = 3;
     }
+
+    public object GetValue()
+    {
+        if (ZeroDimValue != null)
+        {
+            return ZeroDimValue;
+        }
+
+        else if (OneDimValue != null)
+        {
+            return OneDimValue;
+        }
+
+        else if (TwoDimValue != null)
+        {
+            return TwoDimValue;
+        }
+
+        else if (ThreeDimValue != null)
+        {
+            return ThreeDimValue;
+        }
+
+        else
+        {
+            throw new ArgumentException();
+        }
+    }
 }

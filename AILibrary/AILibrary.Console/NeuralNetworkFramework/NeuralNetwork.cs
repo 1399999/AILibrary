@@ -38,4 +38,43 @@ public static class NeuralNetwork
 
         return (float)(totalLoss / numSamples);
     }
+
+    public static float CrossEntropy(this Tensor predictions, int[] labels)
+    {
+        var predictionsL = (float[][])predictions.GetValue();
+
+        if (predictionsL == null || labels == null)
+        {
+            throw new ArgumentNullException("Arguments cannot be null.");
+        }
+
+        int numSamples = predictionsL.Length;
+
+        if (numSamples != labels.Length)
+        {
+            throw new ArgumentException("Number of samples in predictions and labels must match.");
+        }
+
+        int numClasses = predictionsL[0].Length;
+        float epsilon = 1e-15f; // to avoid log(0)
+
+        double totalLoss = 0.0;
+
+        for (int i = 0; i < numSamples; i++)
+        {
+            int label = labels[i];
+
+            if (label < 0 || label >= numClasses)
+            {
+                throw new ArgumentException($"Label {label} is out of range for sample {i}.");
+            }
+
+            float p = predictionsL[i][label];
+            p = Math.Clamp(p, epsilon, 1.0f - epsilon); // numerical stability
+
+            totalLoss += -Math.Log(p);
+        }
+
+        return (float)(totalLoss / numSamples);
+    }
 }
