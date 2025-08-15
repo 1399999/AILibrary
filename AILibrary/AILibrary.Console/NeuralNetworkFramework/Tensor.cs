@@ -8,6 +8,8 @@ public class Tensor
     public float[][][]? ThreeDimValue { get; set; } = null;
     public object Grad { get; set; }
     public int Dimensions { get; set; }
+    public dynamic Operation { get; set; }
+    //public dynamic Children { get; set; }
 
     public Tensor(float value)
     {

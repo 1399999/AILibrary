@@ -1,4 +1,6 @@
-﻿namespace AILibrary.Examples;
+﻿using AILibrary.NeuralNetworkFramework;
+
+namespace AILibrary.Examples;
 
 public static class TrainedAIWordGenerator
 {
