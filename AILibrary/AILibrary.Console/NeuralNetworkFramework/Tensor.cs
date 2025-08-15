@@ -6,30 +6,35 @@ public class Tensor
     public float[]? OneDimValue { get; set; } = null;
     public float[][]? TwoDimValue { get; set; } = null;
     public float[][][]? ThreeDimValue { get; set; } = null;
+    public object Grad { get; set; }
     public int Dimensions { get; set; }
 
     public Tensor(float value)
     {
         ZeroDimValue = value;
         Dimensions = 0;
+        ZeroGrad();
     }
 
     public Tensor(float[] list)
     {
         OneDimValue = list;
         Dimensions = 1;
+        ZeroGrad();
     }
 
     public Tensor(float[][] list)
     {
         TwoDimValue = list;
         Dimensions = 2;
+        ZeroGrad();
     }
 
     public Tensor(float[][][] list)
     {
         ThreeDimValue = list;
         Dimensions = 3;
+        ZeroGrad();
     }
 
     public object GetValue()
@@ -128,6 +133,29 @@ public class Tensor
         else
         {
             throw new ArgumentException();
+        }
+    }
+
+    public void ZeroGrad()
+    {
+        if (Dimensions == 0)
+        {
+            Grad = 0F;
+        }
+
+        else if (Dimensions == 1)
+        {
+            Grad = FrameworkUtilities.Zeros(OneDimValue.Length);
+        }
+
+        else if (Dimensions == 2)
+        {
+            Grad = FrameworkUtilities.Zeros(TwoDimValue.Length, TwoDimValue[0].Length);
+        }
+
+        else if (Dimensions == 3)
+        {
+            Grad = FrameworkUtilities.Zeros(ThreeDimValue.Length, ThreeDimValue[0].Length, ThreeDimValue[0][0].Length);
         }
     }
 }
