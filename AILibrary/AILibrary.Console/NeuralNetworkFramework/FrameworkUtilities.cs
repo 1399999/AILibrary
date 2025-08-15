@@ -2,7 +2,7 @@
 
 public static class FrameworkUtilities
 {
-    public static float[] Zeros(int xDim)
+    public static Tensor Zeros(int xDim)
     {
         float[] output = new float[xDim];
 
@@ -11,10 +11,10 @@ public static class FrameworkUtilities
             output[i] = 0F;
         }
 
-        return output;
+        return new Tensor(output);
     }
 
-    public static float[][] Zeros(int xDim, int yDim)
+    public static Tensor Zeros(int xDim, int yDim)
     {
         float[][] output = new float[xDim][];
 
@@ -28,10 +28,10 @@ public static class FrameworkUtilities
             }
         }
 
-        return output;
+        return new Tensor(output);
     }
 
-    public static float[][][] Zeros(int xDim, int yDim, int zDim)
+    public static Tensor Zeros(int xDim, int yDim, int zDim)
     {
         float[][][] output = new float[xDim][][];
 
@@ -50,10 +50,10 @@ public static class FrameworkUtilities
             }
         }
 
-        return output;
+        return new Tensor(output);
     }
 
-    public static float[] Ones(int xDim)
+    public static Tensor Ones(int xDim)
     {
         float[] output = new float[xDim];
 
@@ -62,10 +62,10 @@ public static class FrameworkUtilities
             output[i] = 0F;
         }
 
-        return output;
+        return new Tensor(output);
     }
 
-    public static float[][] Ones(int xDim, int yDim)
+    public static Tensor Ones(int xDim, int yDim)
     {
         float[][] output = new float[xDim][];
 
@@ -79,10 +79,10 @@ public static class FrameworkUtilities
             }
         }
 
-        return output;
+        return new Tensor(output);
     }
 
-    public static float[][][] Ones(int xDim, int yDim, int zDim)
+    public static Tensor Ones(int xDim, int yDim, int zDim)
     {
         float[][][] output = new float[xDim][][];
 
@@ -101,6 +101,6 @@ public static class FrameworkUtilities
             }
         }
 
-        return output;
+        return new Tensor(output);
     }
 }

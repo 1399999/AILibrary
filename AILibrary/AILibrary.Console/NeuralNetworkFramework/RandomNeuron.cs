@@ -1,4 +1,4 @@
-﻿namespace AILibrary;
+﻿namespace AILibrary.NeuralNetworkFramework;
 
 public class RandomNeuron
 {
