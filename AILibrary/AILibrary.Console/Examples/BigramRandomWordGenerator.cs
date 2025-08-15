@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace AILibrary;
+namespace AILibrary.Examples;
 
 public class BigramRandomWordGenerator
 {

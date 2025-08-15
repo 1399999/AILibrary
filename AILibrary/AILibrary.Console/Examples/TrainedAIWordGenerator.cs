@@ -1,6 +1,6 @@
-﻿namespace AILibrary;
+﻿namespace AILibrary.Examples;
 
-public static class UntrainedAIWordGenerator
+public static class TrainedAIWordGenerator
 {
     static int blockSize = 3;
 
@@ -29,8 +29,6 @@ public static class UntrainedAIWordGenerator
 
         for (int i = 0; i < words.Length && i < 5; i++)
         {
-            Console.WriteLine(words[i]);
-
             string word = string.Empty;
 
             for (int j = 0; j < blockSize; j++)
@@ -47,32 +45,36 @@ public static class UntrainedAIWordGenerator
 
                 for (int k = 0; k < blockSize; k++)
                 {
-                    Console.Write(word[j + k]);
                     blockSizeWords[l][k] = SystemModel.AlphabetNumbers[word[j + k]];
                 }
-
-                Console.Write(" ---> ");
-                Console.WriteLine(word[j + blockSize]);
             }
         }
 
-        float[][] nueralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, false); // C
+        float[][] neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, int.MaxValue); // C
 
-        var emb = blockSizeWords.MatrixIndexInto(nueralNet);
+        var weights1 = RandomNeuron.CreateRandomNeurons(blockSize * 2, 100, true, int.MaxValue); // W1
+        var biases1 = RandomNeuron.CreateRandomNeurons(100, true, int.MaxValue); // b1
+        var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, int.MaxValue); // W2
+        var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, int.MaxValue); // b2 
 
-        var weights1 = RandomNeuron.CreateRandomNeurons(blockSize * 2, 100, false); // W1
-        var biases1 = RandomNeuron.CreateRandomNeurons(100, false); // b1
+        long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
+        Console.WriteLine(paramaters);
 
+        var emb = blockSizeWords.MatrixIndexInto(neuralNet);
         var kiloList = emb.Flatten3DTo2DArrayZToY();
         var megaList = kiloList.MatrixMultiply(weights1);
         var gigaList = megaList.OffsetArray(biases1);
         var tanhList = gigaList.GetTanh(); // h
 
-        var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, false); // W2
-        var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, false); // b2
-
         var logits = tanhList.MatrixMultiply(weights2).OffsetArray(biases2);
         float loss = logits.CrossEntropy(allWords);
+
+        //loss.BackwardPropagate();
+
+        for (int i = 0; i < paramaters; i++)
+        {
+
+        }
 
         Console.WriteLine(loss);
     }
