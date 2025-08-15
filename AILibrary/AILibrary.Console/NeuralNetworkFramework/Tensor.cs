@@ -59,4 +59,75 @@ public class Tensor
             throw new ArgumentException();
         }
     }
+
+    public override string ToString()
+    {
+        if (ZeroDimValue != null)
+        {
+            return ZeroDimValue.ToString();
+        }
+
+        else if (OneDimValue != null)
+        {
+            string output = "[";
+
+            for (int i = 0; i < OneDimValue.Length; i++)
+            {
+                output += OneDimValue[i].ToString();
+                output += ", ";
+            }
+
+            return output + "]";
+        }
+
+        else if (TwoDimValue != null)
+        {
+            string output = string.Empty;
+
+            for (int i = 0; i < TwoDimValue.Length; i++)
+            {
+                output += "[";
+
+                for (int j = 0; j < TwoDimValue.Length; j++)
+                {
+                    output += TwoDimValue[i][j].ToString();
+                    output += ", ";
+                }
+
+                output += "],\n";
+            }
+
+            return output + "]";
+        }
+
+        else if (ThreeDimValue != null)
+        {
+            string output = string.Empty;
+
+            for (int i = 0; i < ThreeDimValue.Length; i++)
+            {
+                for (int j = 0; j < ThreeDimValue.Length; j++)
+                {
+                    output += "[";
+
+                    for (int k = 0; k < ThreeDimValue.Length; k++)
+                    {
+                        output += ThreeDimValue[i][j][k].ToString();
+                        output += ", ";
+                    }
+
+                    output += "],\n";
+                }
+
+                output += "\n";
+            }
+
+            return output + "]";
+        }
+
+        else
+        {
+            throw new ArgumentException();
+        }
+    }
 }
