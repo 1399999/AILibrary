@@ -669,7 +669,7 @@ public class Tensor
             var data = tensorA._data.Matmul(tensorB._data);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Pow());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MatMul());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             tensorA.Children.Add(z);
@@ -723,6 +723,47 @@ public class Tensor
                 }
 
                 b.Backward(db, z);
+            }
+        }
+    }
+
+    private class Exp()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor tensorA)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = Np.Exp(tensorA._data);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Exp());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            tensorA.Children.Add(z);
+
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            Cache.Add(data);
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            Tensor data = Cache[1];
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // d/da(e^a) = e^a, apply the chain rule to the derivative of e^a:
+                var da = data * dz;
+                a.Backward(da, z);
             }
         }
     }
