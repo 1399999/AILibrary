@@ -1,7 +1,4 @@
-﻿using System.Drawing;
-using System.Numerics;
-
-namespace AILibrary.Temp;
+﻿namespace AILibrary.Temp;
 
 public class Tensor
 {
@@ -9,18 +6,18 @@ public class Tensor
     public bool RequiresGrad { get; set; }
     public dynamic? Operation { get; set; }
     public dynamic Children { get; set; } // !!!!!!!!!!!!!!!!!!!
-    public dynamic Shape { get; set; } // !!!!!!!!!!!!!!!!!!!
-    public object Grad { get; set; }
+    public List<int> Shape { get; set; }
+    public object? Grad { get; set; }
 
-    public Tensor(object data, bool requires_grad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    public Tensor(object data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
     {
         _data = data;
-        RequiresGrad = requires_grad;
+        RequiresGrad = requiresGrad;
         Operation = operation;
         Children = new List<Tensor>(); // !!!!!!!!!!!!!!!!!!!
-        Shape = 0; // !!!!!!!!!!!!!!!!!!!
+        Shape = new List<int>();
 
-        if (requires_grad)
+        if (requiresGrad)
         {
             Grad = Np.zeros_like(data);
         }
@@ -75,18 +72,18 @@ public class Tensor
         }
     }
 
-    //public object ToList()
-    //{
+    public void ToList()
+    {
+        throw new NotImplementedException();
+    }
 
-    //}
-
-    //public object ToArray()
-    //{
-
-    //}
+    public void ToArray()
+    {
+        throw new NotImplementedException();
+    }
 
     /// <summary>
-    /// ''' Reset the Tensor's gradients to zero. '''
+    /// Reset the Tensor's gradients to zero.
     /// </summary>
     public void ZeroGrad()
     {
@@ -123,6 +120,12 @@ public class Tensor
         return op.Forward(self, other);
     }
 
+    public static Tensor operator +(Tensor self, float other)
+    {
+        dynamic op = new Add();
+        return op.Forward(self, new Tensor(other));
+    }
+
     /// <summary>
     /// New = self - other
     /// </summary>
@@ -130,6 +133,17 @@ public class Tensor
     /// <param name="other"></param>
     /// <returns></returns>
     public static Tensor operator -(Tensor self, Tensor other) => self + (other * -1);
+    public static Tensor operator -(Tensor self, float other) => self + (new Tensor(other) * -1);
+    public static Tensor operator -(int self, Tensor other) 
+    {
+        if (self == 0)
+        {
+            dynamic op = new Neg();
+            return op.Forward(other);
+        }
+
+        throw new ArgumentException();
+    }
 
     /// <summary>
     /// New = self * other
@@ -191,8 +205,14 @@ public class Tensor
         return op.Forward(self, other);
     }
 
+    \public static Tensor operator /(Tensor self, float other)
+    {
+        dynamic op = new Div();
+        return op.Forward(self, other);
+    }
+
     /// <summary>
-    /// New = self > other
+    /// New = self[index]
     /// </summary>
     /// <param name="self"></param>
     /// <param name="other"></param>
@@ -204,7 +224,7 @@ public class Tensor
     }
 
     /// <summary>
-    /// New = self[index]
+    /// New = self > other
     /// </summary>
     /// <param name="self"></param>
     /// <param name="other"></param>
@@ -294,6 +314,113 @@ public class Tensor
     {
         dynamic op = new MaskedFill();
         return op.Forward(this, condition, value);
+    }
+
+    private class Add()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor a, Tensor b)
+        {
+            bool requiresGrad = a.RequiresGrad || b.RequiresGrad;
+
+            // Get new Tensors's data:
+            object data = a._data + b._data;
+
+            // Create new Tensor's data:
+            Tensor z = new Tensor(data, requiresGrad, operation: new Add());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(a);
+            Parents.Add(b);
+            a.Children.Add(z);
+            b.Children.Add(z);
+            Cache.Add(a);
+            Cache.Add(b);
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            Tensor b = Cache[1];
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                var da = dz;
+
+                // Rescale gradient to have the same shape "a":
+                int gradDim = dz.Shape.Count;
+                int inDim = a.Shape.Count;
+
+                for (int i = 0; i < gradDim - inDim; i++)
+                {
+                    da = da.Sum(dim: 0);
+                }
+
+                for (int n = 0; n < a.Shape.Count; n++)
+                {
+                    if (a.Shape[n] == 1)
+                    {
+                        da = da.Sum(dim: n, keepDims: true);
+                    }
+                }
+
+                a.Backward(da, z);
+            }
+
+            // Find gradients relative to "b", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                var db = dz;
+
+                // Rescale gradient to have the same shape "a":
+                int gradDim = dz.Shape.Count;
+                int inDim = b.Shape.Count;
+
+                for (int i = 0; i < gradDim - inDim; i++)
+                {
+                    db = db.Sum(dim: 0);
+                }
+
+                for (int n = 0; n < b.Shape.Count; n++)
+                {
+                    if (b.Shape[n] == 1)
+                    {
+                        db = db.Sum(dim: n, keepDims: true);
+                    }
+                }
+
+                a.Backward(db, z);
+            }
+        }
+    }
+
+    private class Neg()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor a)
+        {
+            bool requiresGrad = a.RequiresGrad;
+
+            // Get new Tensors's data:
+            object data = 0 - a._data;
+
+            // Create new Tensor's data:
+            Tensor z = new Tensor(data, requiresGrad, operation: new Add());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(a);
+            a.Children.Add(z);
+            Cache.Add(a);
+
+            return z;
+        }
     }
 }
 
