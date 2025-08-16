@@ -605,6 +605,56 @@ public class Tensor
             }
         }
     }
+
+
+    private class Pow()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor tensorA, Tensor tensorB)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+            var data = tensorA._data ^ tensorB._data;
+
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Pow());
+
+            tensorA.Children.Add(z);
+
+            Cache.Add(tensorA);
+            Cache.Add(tensorB);
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            var tensorA = Cache[0];
+            var tensorB = Cache[1];
+
+            if (tensorA.RequiresGrad)
+            {
+                var da = dz * (tensorB._data * tensorA._data ^ (tensorB._data - 1));
+                int gradDim = da.Shape.Count;
+                int inDim = tensorA.Shape.Count;
+
+                for (int i = 0; i < gradDim - inDim; i++) 
+                {
+                    da = da.Sum(axis: 0);
+                }
+
+                for (int n = 0; n < tensorA.Shape.Count; n++)
+                {
+                    if (tensorA.Shape[n] == 1)
+                    {
+                        da = da.Sum(dim: n, keepDims: true);
+                    }
+                }
+
+                tensorA.Backward(da, z);
+            }
+        }
+    }
 }
 
 class Parameter : Tensor
