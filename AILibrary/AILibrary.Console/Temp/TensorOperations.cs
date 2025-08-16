@@ -655,6 +655,77 @@ public class Tensor
             }
         }
     }
+
+    private class MatMul()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor tensorA, Tensor tensorB)
+        {
+            bool requiresGrad = tensorA.RequiresGrad || tensorB.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = tensorA._data.Matmul(tensorB._data);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Pow());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            tensorA.Children.Add(z);
+
+            Parents.Add(tensorA);
+            Parents.Add(tensorB);
+            a.Children.Add(z);
+            b.Children.Add(z);
+            Cache.Add(tensorA);
+            Cache.Add(tensorB);
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            Tensor b = Cache[1];
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Backprop through the matmul:
+                var da = dz.Matmuli(b._data.SwapAxes(-1, -2));
+
+                // Get difference between "a" size and upstream "da" size, to broadcast grad into "a":
+                int gradDim = dz.Shape.Count;
+                int inDim = a.Shape.Count;
+
+                for (int i = 0; i < gradDim - inDim; i++)
+                {
+                    da = da.Sum(dim: 0);
+                }
+
+                a.Backward(da, z);
+            }
+
+            // Find gradients relative to "b", and pass it downstream:
+            if (b.RequiresGrad)
+            {
+                // Backprop through the matmul:
+                var db = a._data.SwapAxes(-1, -2).Matmuli(dz);
+
+                // Get difference between "b" size and upstream "db" size, to broadcast grad into "b":
+                int gradDim = dz.Shape.Count;
+                int inDim = b.Shape.Count;
+
+                for (int i = 0; i < gradDim - inDim; i++)
+                {
+                    db = db.Sum(dim: 0);
+                }
+
+                b.Backward(db, z);
+            }
+        }
+    }
 }
 
 class Parameter : Tensor
