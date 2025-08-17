@@ -256,4 +256,47 @@ public static class TensorUtilities
 
         return array;
     }
+
+    public static IntermediateArray Sqrt(this IntermediateArray array)
+    {
+        if (array.DataZeroDimArray != null)
+        {
+            array.DataZeroDimArray = (float)Math.Sqrt((double)array.DataZeroDimArray);
+        }
+
+        else if (array.DataOneDimArray != null)
+        {
+            for (int i = 0; i < array.DataOneDimArray.Count; i++)
+            {
+                array.DataOneDimArray[i] = (float)Math.Sqrt((double)array.DataOneDimArray[i]);
+            }
+        }
+
+        else if (array.DataTwoDimArray != null)
+        {
+            for (int i = 0; i < array.DataTwoDimArray.Count; i++)
+            {
+                for (int j = 0; j < array.DataTwoDimArray[i].Count; j++)
+                {
+                    array.DataTwoDimArray[i][j] = (float)Math.Sqrt((double)array.DataTwoDimArray[i][j]);
+                }
+            }
+        }
+
+        else if (array.DataThreeDimArray != null)
+        {
+            for (int i = 0; i < array.DataThreeDimArray.Count; i++)
+            {
+                for (int j = 0; j < array.DataThreeDimArray[i].Count; j++)
+                {
+                    for (int k = 0; k < array.DataThreeDimArray[i][j].Count; k++)
+                    {
+                        array.DataThreeDimArray[i][j][k] = (float)Math.Sqrt((double)array.DataThreeDimArray[i][j][k]);
+                    }
+                }
+            }
+        }
+
+        return array;
+    }
 }

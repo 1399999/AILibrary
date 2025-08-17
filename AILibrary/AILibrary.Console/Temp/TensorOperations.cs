@@ -894,7 +894,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = Np.Sqrt(tensorA.Data);
+            var data = tensorA.Data.Sqrt();
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SqrtClass());
