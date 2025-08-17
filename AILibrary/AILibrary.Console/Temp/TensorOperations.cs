@@ -4,12 +4,12 @@ public class Tensor
 {
     public IntermediateArray Data { get; private set; }
     public bool RequiresGrad { get; private set; }
-    public dynamic? Operation { get; private set; } // !!!!!!!!!!!!!!!!!!!
+    public dynamic? Operation { get; private set; }
     public List<Tensor> Children { get; private set; } = new List<Tensor>();
     public List<int> Shape { get; private set; }
     public IntermediateArray? Grad { get; private set; }
 
-    public Tensor(float data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    public Tensor(float data, bool requiresGrad = false, dynamic? operation = null)
     {
         Data = new IntermediateArray(data, 0);
         CtorCommon(requiresGrad, operation);
@@ -21,7 +21,7 @@ public class Tensor
         }
     }
 
-    public Tensor(List<float> data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    public Tensor(List<float> data, bool requiresGrad = false, dynamic? operation = null)
     {
         Data = new IntermediateArray(data, 1);
         CtorCommon(requiresGrad, operation);
@@ -37,7 +37,7 @@ public class Tensor
         }
     }
 
-    public Tensor(List<List<float>> data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    public Tensor(List<List<float>> data, bool requiresGrad = false, dynamic? operation = null)
     {
         Data = new IntermediateArray(data, 2);
         CtorCommon(requiresGrad, operation);
@@ -54,7 +54,7 @@ public class Tensor
         }
     }
 
-    public Tensor(List<List<List<float>>> data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    public Tensor(List<List<List<float>>> data, bool requiresGrad = false, dynamic? operation = null)
     {
         Data = new IntermediateArray(data, 3);
         CtorCommon(requiresGrad, operation);
@@ -72,7 +72,7 @@ public class Tensor
         }
     }
 
-    public Tensor(IntermediateArray data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    public Tensor(IntermediateArray data, bool requiresGrad = false, dynamic? operation = null)
     {
         Data = data;
         CtorCommon(requiresGrad, operation);
@@ -138,7 +138,7 @@ public class Tensor
     /// <param name="z"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public void Backward(dynamic? grad = null, dynamic? z = null)
+    public void Backward(IntermediateArray? grad = null, dynamic? z = null)
     {
         if (!RequiresGrad)
         {
@@ -150,7 +150,7 @@ public class Tensor
             grad = Data.Ones();
         }
 
-        Grad += grad;
+        Grad = Grad + grad;
 
         if (z != null)
         {
@@ -425,7 +425,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             Tensor b = Cache[1];
@@ -436,7 +436,7 @@ public class Tensor
                 var da = dz;
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Shape.Count;
+                int gradDim = dz.Dimensions;
                 int inDim = a.Shape.Count;
 
                 for (int i = 0; i < gradDim - inDim; i++)
@@ -505,7 +505,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
 
@@ -545,7 +545,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             Tensor b = Cache[1];
@@ -630,7 +630,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             Tensor b = Cache[1];
@@ -710,7 +710,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             var tensorA = Cache[0];
             var tensorB = Cache[1];
@@ -765,7 +765,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             Tensor b = Cache[1];
@@ -832,7 +832,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             Tensor data = Cache[1];
@@ -908,7 +908,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             Tensor data = Cache[1];
