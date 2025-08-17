@@ -2,10 +2,11 @@
 
 public class IntermediateArray
 {
-    public float? DataZeroDimArray { get; set; }
-    public List<float>? DataOneDimArray { get; set; }
-    public List<List<float>>? DataTwoDimArray { get; set; }
-    public List<List<List<float>>>? DataThreeDimArray { get; set; }
+    public float? DataZeroDimArray { get; private set; }
+    public List<float>? DataOneDimArray { get; private set; }
+    public List<List<float>>? DataTwoDimArray { get; private set; }
+    public List<List<List<float>>>? DataThreeDimArray { get; private set; }
+
     public IntermediateArray(object data, int dimensions)
     {
         if (dimensions == 0)

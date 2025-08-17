@@ -2,12 +2,12 @@
 
 public class Tensor
 {
-    public IntermediateArray Data { get; set; }
-    public bool RequiresGrad { get; set; }
-    public dynamic? Operation { get; set; } // !!!!!!!!!!!!!!!!!!!
-    public List<Tensor> Children { get; set; }
-    public List<int> Shape { get; set; }
-    public object? Grad { get; set; }
+    public IntermediateArray Data { get; private set; }
+    public bool RequiresGrad { get; private set; }
+    public dynamic? Operation { get; private set; } // !!!!!!!!!!!!!!!!!!!
+    public List<Tensor> Children { get; private set; } = new List<Tensor>();
+    public List<int> Shape { get; private set; }
+    public IntermediateArray? Grad { get; private set; }
 
     public Tensor(float data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
     {
@@ -17,7 +17,7 @@ public class Tensor
 
         if (requiresGrad)
         {
-            Grad = Np.zeros_like(data);
+            Grad = new IntermediateArray(0, 0);
         }
     }
 
@@ -33,7 +33,7 @@ public class Tensor
 
         if (requiresGrad)
         {
-            Grad = Np.zeros_like(data);
+            Grad = TensorUtilities.Zeros(data.Count);
         }
     }
 
@@ -50,7 +50,7 @@ public class Tensor
 
         if (requiresGrad)
         {
-            Grad = Np.zeros_like(data);
+            Grad = TensorUtilities.Zeros(data.Count, data[0].Count);
         }
     }
 
@@ -68,7 +68,7 @@ public class Tensor
 
         if (requiresGrad)
         {
-            Grad = Np.zeros_like(data);
+            Grad = TensorUtilities.Zeros(data.Count, data[0].Count, data[0][0].Count);
         }
     }
 
@@ -77,14 +77,14 @@ public class Tensor
         Data = data;
         CtorCommon(requiresGrad, operation);
 
+        if (requiresGrad)
+        {
+            Grad = data.Zeros();
+        }
+
         if (data.DataZeroDimArray != null)
         {
             Shape = new List<int>();
-
-            if (requiresGrad)
-            {
-                Grad = Np.zeros_like(data.DataZeroDimArray);
-            }
         }
 
         else if (data.DataOneDimArray != null)
@@ -93,11 +93,6 @@ public class Tensor
             {
                 data.DataOneDimArray.Count
             };
-
-            if (requiresGrad)
-            {
-                Grad = Np.zeros_like(data);
-            }
         }
 
         else if (data.DataTwoDimArray != null)
@@ -107,11 +102,6 @@ public class Tensor
                 data.DataTwoDimArray.Count,
                 data.DataTwoDimArray[0].Count
             };
-
-            if (requiresGrad)
-            {
-                Grad = Np.zeros_like(data);
-            }
         }
 
         else if (data.DataThreeDimArray != null)
@@ -122,11 +112,11 @@ public class Tensor
                 data.DataThreeDimArray[0].Count,
                 data.DataThreeDimArray[0][0].Count
             };
+        }
 
-            if (requiresGrad)
-            {
-                Grad = Np.zeros_like(data);
-            }
+        else
+        {
+            throw new ArgumentException();
         }
     }
 
@@ -134,7 +124,6 @@ public class Tensor
     {
         RequiresGrad = requiresGrad;
         Operation = operation;
-        Children = new List<Tensor>();
     }
 
     public override string ToString()
@@ -192,7 +181,7 @@ public class Tensor
     /// </summary>
     public void ZeroGrad()
     {
-        Grad = Np.zeros_like(Data);
+        Grad = Data.Zeros();
     }
 
     /// <summary>
@@ -1060,7 +1049,7 @@ public class Tensor
         public void Backward(Tensor dz, Tensor z)
         {
             Tensor a = Cache[0];
-            object data = cacheExtension;
+            object? data = cacheExtension;
             int dim = cacheExtension2;
 
             // Find gradients relative to "a", and pass it downstream:
@@ -1415,7 +1404,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Add upstream gradients to [index] part of da.
-                Tensor da = np.zeros_like(a.Data);
+                Tensor da = new Tensor(a.Data.Zeros());
                 da[index] = dz;
 
                 a.Backward(da, z);
