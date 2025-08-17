@@ -1,6 +1,4 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace AILibrary.Temp;
+﻿namespace AILibrary.Temp;
 
 public class Tensor
 {
@@ -1327,4 +1325,3 @@ class Parameter : Tensor
 
     }
 }
- 
