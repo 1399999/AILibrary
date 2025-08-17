@@ -147,7 +147,7 @@ public class Tensor
 
         if (grad == null)
         {
-            grad = np.ones_like(Data);
+            grad = Data.Ones();
         }
 
         Grad += grad;
@@ -315,17 +315,6 @@ public class Tensor
     {
         dynamic op = new SliceClass();
         return op.Forward(this, index);
-    }
-
-    /// <summary>
-    /// New = self > other
-    /// </summary>
-    /// <param name="self"></param>
-    /// <param name="other"></param>
-    /// <returns></returns>
-    public static Tensor Gt(Tensor self, Tensor other)
-    {
-        return self.Data > other.Data;
     }
 
     /// <summary>
@@ -965,7 +954,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Expand upstream gradients to the shape of "a":
-                var da = Np.ones(a.Shape) * dz;
+                var da = a.Shape.Ones() * dz;
                 a.Backward(da, z);
             }
         }
@@ -1006,7 +995,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Propagate through the mean(x) operation:
-                var da = Np.ones(a.Shape) * dz;
+                var da = a.Shape.Ones() * dz;
                 da /= np.prod(np.array(a.Shape)[dim]);
                 a.Backward(da, z);
             }
@@ -1030,7 +1019,7 @@ public class Tensor
 
             if (keepdims)
             {
-                data = np.Ones(tensorA.Shape) * data;
+                data = tensorA.Shape.Ones() * data;
             }
 
             // Create new Tensor:
@@ -1061,11 +1050,11 @@ public class Tensor
                 {
                     // Broadcast upstream derivative to the size of "a":
                     dz = np.expand_dims(dz, axis: dim);
-                    dz = dz * np.ones_like(a.Data);
+                    dz = dz * a.Data.Ones();
 
                     // Broadcast upstream output (max) to the size of "a":
                     max = np.expand_dims(data, axis: dim);
-                    max = max * np.ones_like(a.Data);
+                    max = max * a.Data.Ones();
                 }
 
                 // Add upstream gradients to the [max] values:
@@ -1112,7 +1101,7 @@ public class Tensor
             {
                 // Propagate through the var(x) operation:
 
-                var da = np.ones(a.Shape) * dz;
+                var da = a.Shape.Ones() * dz;
                 da = da * 2 * (a.Data - a.Data.mean(axis: dim, keepDims: true)) / np.prod(np.array(a.Shape)[dim]);
 
                 a.Backward(da, z);
