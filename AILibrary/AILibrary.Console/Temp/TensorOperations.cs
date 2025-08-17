@@ -818,7 +818,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = Np.Exp(tensorA.Data);
+            var data = tensorA.Data.EulExp();
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ExpClass());
