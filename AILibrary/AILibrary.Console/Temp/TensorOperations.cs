@@ -857,7 +857,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = Np.Log(tensorA.Data);
+            var data = tensorA.Data.Log();
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new LogClass());
