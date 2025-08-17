@@ -4,7 +4,7 @@ public class Tensor
 {
     public object _data { get; set; } // !!!!!!!!!!!!!!!!!!!
     public bool RequiresGrad { get; set; }
-    public dynamic? Operation { get; set; }
+    public dynamic? Operation { get; set; } // !!!!!!!!!!!!!!!!!!!
     public List<Tensor> Children { get; set; }
     public List<int> Shape { get; set; }
     public object? Grad { get; set; }
@@ -65,7 +65,7 @@ public class Tensor
 
         if (Operation != null)
         {
-            if (Children.Length == 0)
+            if (Children.Count == 0)
             {
                 Operation.Backward(Grad, this);
             }
@@ -116,13 +116,13 @@ public class Tensor
     /// <returns></returns>
     public static Tensor operator +(Tensor self, Tensor other)
     {
-        dynamic op = new Add();
+        dynamic op = new AddClass();
         return op.Forward(self, other);
     }
 
     public static Tensor operator +(Tensor self, float other)
     {
-        dynamic op = new Add();
+        dynamic op = new AddClass();
         return op.Forward(self, new Tensor(other));
     }
 
@@ -138,7 +138,7 @@ public class Tensor
     {
         if (self == 0)
         {
-            dynamic op = new Neg();
+            dynamic op = new NegClass();
             return op.Forward(other);
         }
 
@@ -153,13 +153,13 @@ public class Tensor
     /// <returns></returns>
     public static Tensor operator *(Tensor self, Tensor other)
     {
-        dynamic op = new Mul();
+        dynamic op = new MulClass();
         return op.Forward(self, other);
     }
 
     public static Tensor operator *(Tensor self, float other)
     {
-        dynamic op = new Mul();
+        dynamic op = new MulClass();
         return op.Forward(self, new Tensor(other));
     }
 
@@ -171,13 +171,13 @@ public class Tensor
     /// <returns></returns>
     public static Tensor operator ^(Tensor self, float other)
     {
-        dynamic op = new Pow();
+        dynamic op = new PowClass();
         return op.Forward(self, new Tensor(other));
     }
 
     public static Tensor operator ^(Tensor self, Tensor other)
     {
-        dynamic op = new Pow();
+        dynamic op = new PowClass();
         return op.Forward(self, other);
     }
 
@@ -189,7 +189,7 @@ public class Tensor
     /// <returns></returns>
     public Tensor Matmul(Tensor other)
     {
-        dynamic op = new MatMul();
+        dynamic op = new MatMulClass();
         return op.Forward(this, other);
     }
 
@@ -201,13 +201,13 @@ public class Tensor
     /// <returns></returns>
     public static Tensor operator /(Tensor self, Tensor other)
     {
-        dynamic op = new Div();
+        dynamic op = new DivClass();
         return op.Forward(self, other);
     }
 
-    \public static Tensor operator /(Tensor self, float other)
+    public static Tensor operator /(Tensor self, float other)
     {
-        dynamic op = new Div();
+        dynamic op = new DivClass();
         return op.Forward(self, other);
     }
 
@@ -219,7 +219,7 @@ public class Tensor
     /// <returns></returns>
     public Tensor IndexInto(Tensor index)
     {
-        dynamic op = new Slice();
+        dynamic op = new SliceClass();
         return op.Forward(this, index);
     }
 
@@ -231,7 +231,7 @@ public class Tensor
     /// <returns></returns>
     public static Tensor Gt(Tensor self, Tensor other)
     {
-        return _data > other.ToArray();
+        return self._data > other.ToArray();
     }
 
     /// <summary>
@@ -240,9 +240,9 @@ public class Tensor
     /// <param name="dim">Dimention to be reduced (only largest remains).</param>
     /// <param name="keepDims">Whether to broadcast result to same shape as input.</param>
     /// <returns></returns>
-    public Tensor Max(int dim = -1, bool keepDims = false)
+    public Tensor GetMax(int dim = -1, bool keepDims = false)
     {
-        dynamic op = new Max();
+        dynamic op = new MaxClass();
         return op.Forward(this, dim, keepDims: keepDims);
     }
 
@@ -252,9 +252,9 @@ public class Tensor
     /// <param name="dim">Dimention to be summed across.</param>
     /// <param name="keepDims">Whether to broadcast result to same shape as input.</param>
     /// <returns>Returns the sum of all values across the "dim" dimention. </returns>
-    public Tensor Sum(int dim = -1, bool keepDims = false)
+    public Tensor GetSum(int dim = -1, bool keepDims = false)
     {
-        dynamic op = new Sum();
+        dynamic op = new SumClass();
         return op.Forward(this, dim, keepDims: keepDims);
     }
 
@@ -264,9 +264,9 @@ public class Tensor
     /// <param name="dim">Dimention to be averaged across.</param>
     /// <param name="keepDims">Wether to broadcast result to same shape as input.</param>
     /// <returns>Returns the mean of all values across the "dim" dimention.</returns>
-    public Tensor Mean(int dim = -1, bool keepDims = false)
+    public Tensor GetMean(int dim = -1, bool keepDims = false)
     {
-        dynamic op = new Mean();
+        dynamic op = new MeanClass();
         return op.Forward(this, dim, keepDims: keepDims);
     }
 
@@ -278,7 +278,7 @@ public class Tensor
     /// <returns>Returns the variance of all values across the "dim" dimention.</returns>
     public Tensor Vari(int dim = -1, bool keepDims = false)
     {
-        dynamic op = new Var();
+        dynamic op = new VarClass();
         return op.Forward(this, dim, keepDims: keepDims);
     }
 
@@ -289,7 +289,7 @@ public class Tensor
     /// <returns>Returns the original tensor reshaped to the new shape given.</returns>
     public Tensor Reshapei(dynamic shape) // !!!!!!!!!!!!!!
     {
-        dynamic op = new Reshape();
+        dynamic op = new ReshapeClass();
         return op.Forward(this, shape);
     }
 
@@ -300,7 +300,7 @@ public class Tensor
     /// <returns>Returns the original tensor with the two given dimentions transposed.</returns>
     public Tensor Transposei(dynamic dims) // !!!!!!!!!!!!!!
     {
-        dynamic op = new Transpose();
+        dynamic op = new TransposeClass();
         return op.Forward(this, dims);
     }
 
@@ -312,11 +312,11 @@ public class Tensor
     /// <returns>Returns the original tensor with the values where condition is True set to "value".</returns>
     public Tensor MaskedFilli(dynamic condition, float value) // !!!!!!!!!!!!!!
     {
-        dynamic op = new MaskedFill();
+        dynamic op = new MaskedFillClass();
         return op.Forward(this, condition, value);
     }
 
-    private class Add()
+    private class AddClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -329,7 +329,7 @@ public class Tensor
             object data = a._data + b._data;
 
             // Create new Tensor's data:
-            Tensor z = new Tensor(data, requiresGrad, operation: new Add());
+            Tensor z = new Tensor(data, requiresGrad, operation: new AddClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(a);
@@ -358,14 +358,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    da = da.Sum(dim: 0);
+                    da = da.GetSum(dim: 0);
                 }
 
                 for (int n = 0; n < a.Shape.Count; n++)
                 {
                     if (a.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepDims: true);
+                        da = da.GetSum(dim: n, keepDims: true);
                     }
                 }
 
@@ -383,14 +383,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    db = db.Sum(dim: 0);
+                    db = db.GetSum(dim: 0);
                 }
 
                 for (int n = 0; n < b.Shape.Count; n++)
                 {
                     if (b.Shape[n] == 1)
                     {
-                        db = db.Sum(dim: n, keepDims: true);
+                        db = db.GetSum(dim: n, keepDims: true);
                     }
                 }
 
@@ -399,7 +399,7 @@ public class Tensor
         }
     }
 
-    private class Neg()
+    private class NegClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -412,7 +412,7 @@ public class Tensor
             object data = 0 - a._data;
 
             // Create new Tensor's data:
-            Tensor z = new Tensor(data, requiresGrad, operation: new Neg());
+            Tensor z = new Tensor(data, requiresGrad, operation: new NegClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(a);
@@ -436,7 +436,7 @@ public class Tensor
         }
     }
 
-    private class Mul()
+    private class MulClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -449,7 +449,7 @@ public class Tensor
             object data = a._data * b._data;
 
             // Create new Tensor's data:
-            Tensor z = new Tensor(data, requiresGrad, operation: new Mul());
+            Tensor z = new Tensor(data, requiresGrad, operation: new MulClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(a);
@@ -521,7 +521,7 @@ public class Tensor
         }
     }
 
-    private class Div()
+    private class DivClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -534,7 +534,7 @@ public class Tensor
             object data = a._data / b._data;
 
             // Create new Tensor's data:
-            Tensor z = new Tensor(data, requiresGrad, operation: new Div());
+            Tensor z = new Tensor(data, requiresGrad, operation: new DivClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(a);
@@ -607,7 +607,7 @@ public class Tensor
     }
 
 
-    private class Pow()
+    private class PowClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -617,7 +617,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
             var data = tensorA._data ^ tensorB._data;
 
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Pow());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new PowClass());
 
             tensorA.Children.Add(z);
 
@@ -656,7 +656,7 @@ public class Tensor
         }
     }
 
-    private class MatMul()
+    private class MatMulClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -669,7 +669,7 @@ public class Tensor
             var data = tensorA._data.Matmul(tensorB._data);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MatMul());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MatMulClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -691,7 +691,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Backprop through the matmul:
-                var da = dz.Matmuli(b._data.SwapAxes(-1, -2));
+                var da = dz.Matmul(b._data.SwapAxes(-1, -2));
 
                 // Get difference between "a" size and upstream "da" size, to broadcast grad into "a":
                 int gradDim = dz.Shape.Count;
@@ -699,7 +699,7 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    da = da.Sum(dim: 0);
+                    da = da.GetSum(dim: 0);
                 }
 
                 a.Backward(da, z);
@@ -725,7 +725,7 @@ public class Tensor
         }
     }
 
-    private class Exp()
+    private class ExpClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -738,7 +738,7 @@ public class Tensor
             var data = Np.Exp(tensorA._data);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Exp());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ExpClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -764,7 +764,7 @@ public class Tensor
         }
     }
 
-    private class Log()
+    private class LogClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -777,7 +777,7 @@ public class Tensor
             var data = Np.Log(tensorA._data);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Log());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new LogClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -801,7 +801,7 @@ public class Tensor
         }
     }
 
-    private class Sqrt()
+    private class SqrtClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -814,7 +814,7 @@ public class Tensor
             var data = Np.Sqrt(tensorA._data);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Sqrt());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SqrtClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -828,6 +828,7 @@ public class Tensor
         public void Backward(Tensor dz, Tensor z)
         {
             Tensor a = Cache[0];
+            Tensor data = Cache[1];
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)
@@ -839,7 +840,7 @@ public class Tensor
         }
     }
 
-    private class Sum()
+    private class SumClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -852,7 +853,7 @@ public class Tensor
             var data = tensorA._data.Sum(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Sum());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SumClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -876,7 +877,7 @@ public class Tensor
         }
     }
 
-    private class Mean()
+    private class MeanClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -891,7 +892,7 @@ public class Tensor
             var data = tensorA._data.Mean(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Mean());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MeanClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -918,7 +919,7 @@ public class Tensor
         }
     }
 
-    private class Max()
+    private class MaxClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -939,7 +940,7 @@ public class Tensor
             }
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Max());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MaxClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -981,7 +982,7 @@ public class Tensor
         }
     }
 
-    private class Var()
+    private class VarClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -996,7 +997,7 @@ public class Tensor
             var data = tensorA._data.var(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Var());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new VarClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -1025,7 +1026,7 @@ public class Tensor
         }
     }
 
-    private class Reshape()
+    private class ReshapeClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -1038,7 +1039,7 @@ public class Tensor
             var data = tensorA._data.reshape(*shape);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Reshape());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ReshapeClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -1064,7 +1065,7 @@ public class Tensor
         }
     }
 
-    private class Transpose()
+    private class TransposeClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -1079,7 +1080,7 @@ public class Tensor
             var data = tensorA._data.swapaxes(*dims);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Transpose());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new TransposeClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -1107,12 +1108,12 @@ public class Tensor
         }
     }
 
-    private class Cat()
+    private class CatClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public int? cacheExtension;
+        public int cacheExtension = 0;
 
         public Tensor Forward(List<Tensor> tensors, int dim)
         {
@@ -1132,7 +1133,7 @@ public class Tensor
             data = np.concatenate(tensors, axis: dim);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Cat());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new CatClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents = tensors;
@@ -1169,7 +1170,7 @@ public class Tensor
         }
     }
 
-    private class Stacki()
+    private class StackClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -1195,7 +1196,7 @@ public class Tensor
             data = np.stack(tensors, axis: dim);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Stacki());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new StackClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents = tensors;
@@ -1232,7 +1233,7 @@ public class Tensor
         }
     }
 
-    private class MaskedFill()
+    private class MaskedFillClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -1247,7 +1248,7 @@ public class Tensor
             object data = np.where(condition, tensorA._data, value);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MaskedFill());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MaskedFillClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -1274,7 +1275,7 @@ public class Tensor
         }
     }
 
-    private class Slice()
+    private class SliceClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
@@ -1289,7 +1290,7 @@ public class Tensor
             object data = tensorA._data[index];
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Slice());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SliceClass());
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -1315,13 +1316,5 @@ public class Tensor
                 a.Backward(da, z);
             }
         }
-    }
-}
-
-class Parameter : Tensor
-{
-    public Parameter(object data, bool requires_grad = false, dynamic? operation = null) : base(data, requires_grad, operation)
-    {
-
     }
 }
