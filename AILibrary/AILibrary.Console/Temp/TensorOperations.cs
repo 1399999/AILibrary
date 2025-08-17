@@ -1,11 +1,13 @@
-﻿namespace AILibrary.Temp;
+﻿using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace AILibrary.Temp;
 
 public class Tensor
 {
     public object _data { get; set; } // !!!!!!!!!!!!!!!!!!!
     public bool RequiresGrad { get; set; }
     public dynamic? Operation { get; set; }
-    public dynamic Children { get; set; } // !!!!!!!!!!!!!!!!!!!
+    public List<Tensor> Children { get; set; }
     public List<int> Shape { get; set; }
     public object? Grad { get; set; }
 
@@ -672,12 +674,10 @@ public class Tensor
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MatMul());
 
             // Add new Tensors to "children" and old Tensors to "parents":
-            tensorA.Children.Add(z);
-
             Parents.Add(tensorA);
             Parents.Add(tensorB);
-            a.Children.Add(z);
-            b.Children.Add(z);
+            tensorA.Children.Add(z);
+            tensorB.Children.Add(z);
             Cache.Add(tensorA);
             Cache.Add(tensorB);
 
@@ -743,8 +743,6 @@ public class Tensor
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Exp());
 
             // Add new Tensors to "children" and old Tensors to "parents":
-            tensorA.Children.Add(z);
-
             Parents.Add(tensorA);
             tensorA.Children.Add(z);
             Cache.Add(tensorA);
@@ -767,6 +765,559 @@ public class Tensor
             }
         }
     }
+
+    private class Log()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor tensorA)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = Np.Log(tensorA._data);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Log());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // d/da(ln(a)) = (1/a), apply the chain rule to the derivative of the natural log:
+                var da = (1 / a._data) * dz;
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Sqrt()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor tensorA)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = Np.Sqrt(tensorA._data);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Sqrt());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            Cache.Add(data);
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // d/dx(sqrt(a)) = (1/2) * (1/sqrt(a)), apply the chain rule to the derivative of the square root:
+                var da = (1 / 2) * (1 / data) * dz;
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Sum()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor tensorA, int dim, bool keepdims)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = tensorA._data.Sum(axis: dim, keepdims: keepdims);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Sum());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Expand upstream gradients to the shape of "a":
+                var da = Np.ones(a.Shape) * dz;
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Mean()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public int cacheExtension = 0;
+
+        public Tensor Forward(Tensor tensorA, int dim, bool keepdims)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = tensorA._data.Mean(axis: dim, keepdims: keepdims);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Mean());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            cacheExtension = dim;
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            int dim = cacheExtension;
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Propagate through the mean(x) operation:
+                var da = Np.ones(a.Shape) * dz;
+                da /= np.prod(np.array(a.Shape)[dim]);
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Max()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public object? cacheExtension;
+        public int cacheExtension2;
+
+        public Tensor Forward(Tensor tensorA, int dim, bool keepdims = false)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = np.max(tensorA._data, axis: dim, keepdims: keepdims);
+
+            if (keepdims)
+            {
+                data = np.Ones(tensorA.Shape) * data;
+            }
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Max());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            cacheExtension2 = data;
+            cacheExtension = dim;
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            object data = cacheExtension;
+            int dim = cacheExtension2;
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                var max = data;
+
+                if (a.Shape != dz.Shape)
+                {
+                    // Broadcast upstream derivative to the size of "a":
+                    dz = np.expand_dims(dz, axis: dim);
+                    dz = dz * np.ones_like(a._data);
+
+                    // Broadcast upstream output (max) to the size of "a":
+                    max = np.expand_dims(data, axis: dim);
+                    max = max * np.ones_like(a._data);
+                }
+
+                // Add upstream gradients to the [max] values:
+                var da = dz * np.equal(a._data, max);
+
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Var()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public int cacheExtension;
+
+        public Tensor Forward(Tensor tensorA, int dim, bool keepdims = false)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = tensorA._data.var(axis: dim, keepdims: keepdims);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Var());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            cacheExtension = dim;
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            int dim = cacheExtension;
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Propagate through the var(x) operation:
+
+                var da = np.ones(a.Shape) * dz;
+                da = da * 2 * (a._data - a._data.mean(axis: dim, keepDims: true)) / np.prod(np.array(a.Shape)[dim]);
+
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Reshape()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public Tensor Forward(Tensor tensorA, dynamic shape)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = tensorA._data.reshape(*shape);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Reshape());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Propagate through the var(x) operation:
+
+                var da = dz.Reshapei(a.Shape);
+
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Transpose()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public dynamic? cacheExtension;
+
+        public Tensor Forward(Tensor tensorA, dynamic dims) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            var data = tensorA._data.swapaxes(*dims);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Transpose());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            cacheExtension = dims;
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            dynamic? dims = cacheExtension;
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Propagate through the var(x) operation:
+
+                var da = dz.swapaxes(*dims);
+
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Cat()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public int? cacheExtension;
+
+        public Tensor Forward(List<Tensor> tensors, int dim)
+        {
+            bool requiresGrad = false;
+
+            foreach (var tensor in tensors)
+            {
+                if (tensor.RequiresGrad)
+                {
+                    requiresGrad = true;
+                }
+            }
+
+            object data;
+
+            // Get new Tensor's data:
+            data = np.concatenate(tensors, axis: dim);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Cat());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents = tensors;
+
+            foreach (var tensor in tensors)
+            {
+                tensor.Children.Add(z);
+            }
+
+            Cache = tensors;
+            cacheExtension = dim;
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            List<Tensor> tensors = Cache;
+            int dim = cacheExtension;
+
+            dz = np.split(dz, tensors.Count, dim);
+
+            // Find gradients relative to each tensor in "tensor", and pass it downstream:
+            for (int i = 0; i < tensors.Count; i++)
+            {
+                if (tensors[i].RequiresGrad)
+                {
+                    // For every tensor that generated the output, get gradients relative to that part of "dz": 
+                    dim = dz[i];
+
+                    tensors[i].Backward(dim, z);
+                }
+            }
+        }
+    }
+
+    private class Stacki()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public int? cacheExtension;
+
+        public Tensor Forward(List<Tensor> tensors, int dim)
+        {
+            // Verify if any original tensors requires grad:
+            bool requiresGrad = false;
+
+            foreach (var tensor in tensors)
+            {
+                if (tensor.RequiresGrad)
+                {
+                    requiresGrad = true;
+                }
+            }
+
+            object data;
+
+            // Get new Tensor's data:
+            data = np.stack(tensors, axis: dim);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Stacki());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents = tensors;
+
+            foreach (var tensor in tensors)
+            {
+                tensor.Children.Add(z);
+            }
+
+            Cache = tensors;
+            cacheExtension = dim;
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            List<Tensor> tensors = Cache;
+            int? dim = cacheExtension;
+
+            dz = np.split(dz, tensors.Count, dim);
+
+            // Find gradients relative to each tensor in "tensor", and pass it downstream:
+            for (int i = 0; i < tensors.Count; i++)
+            {
+                if (tensors[i].RequiresGrad)
+                {
+                    // For every tensor that generated the output, get gradients relative to that part of "dz": 
+                    dim = dz[i].reshape(tensors[i]._data.Shape);
+
+                    tensors[i].Backward(dim, z);
+                }
+            }
+        }
+    }
+
+    private class MaskedFill()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public dynamic? cacheExtension;
+
+        public Tensor Forward(Tensor tensorA, dynamic condition, float value) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            object data = np.where(condition, tensorA._data, value);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MaskedFill());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            cacheExtension = condition;
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            dynamic? condition = cacheExtension;
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Because some activations are just set to a value, this operation is not differentiable.
+                Tensor da = np.where(condition, dz, 0);
+
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class Slice()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
+
+        public int cacheExtension = 0;
+
+        public Tensor Forward(Tensor tensorA, int index) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            object data = tensorA._data[index];
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new Slice());
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            cacheExtension = index;
+
+            return z;
+        }
+
+        public void Backward(Tensor dz, Tensor z)
+        {
+            Tensor a = Cache[0];
+            int index = cacheExtension;
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Add upstream gradients to [index] part of da.
+                Tensor da = np.zeros_like(a._data);
+                da[index] = dz;
+
+                a.Backward(da, z);
+            }
+        }
+    }
 }
 
 class Parameter : Tensor
@@ -776,3 +1327,4 @@ class Parameter : Tensor
 
     }
 }
+ 
