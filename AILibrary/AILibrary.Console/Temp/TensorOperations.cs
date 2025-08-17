@@ -2,19 +2,17 @@
 
 public class Tensor
 {
-    public object _data { get; set; } // !!!!!!!!!!!!!!!!!!!
+    public IntermediateArray Data { get; set; }
     public bool RequiresGrad { get; set; }
     public dynamic? Operation { get; set; } // !!!!!!!!!!!!!!!!!!!
     public List<Tensor> Children { get; set; }
     public List<int> Shape { get; set; }
     public object? Grad { get; set; }
 
-    public Tensor(object data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    public Tensor(float data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
     {
-        _data = data;
-        RequiresGrad = requiresGrad;
-        Operation = operation;
-        Children = new List<Tensor>(); // !!!!!!!!!!!!!!!!!!!
+        Data = new IntermediateArray(data, 0);
+        CtorCommon(requiresGrad, operation);
         Shape = new List<int>();
 
         if (requiresGrad)
@@ -23,18 +21,125 @@ public class Tensor
         }
     }
 
-    public override string ToString()
+    public Tensor(List<float> data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
     {
-        return $"({_data}, requires_grad = {RequiresGrad})";
+        Data = new IntermediateArray(data, 1);
+        CtorCommon(requiresGrad, operation);
+
+        Shape = new List<int>()
+        {
+            data.Count
+        };
+
+        if (requiresGrad)
+        {
+            Grad = Np.zeros_like(data);
+        }
     }
 
-    /// <summary>
-    /// Returns the data stored in the tensor as a Numpy Array.
-    /// </summary>
-    /// <returns></returns>
-    public object Data()
+    public Tensor(List<List<float>> data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
     {
-        return _data;
+        Data = new IntermediateArray(data, 2);
+        CtorCommon(requiresGrad, operation);
+
+        Shape = new List<int>()
+        {
+            data.Count,
+            data[0].Count
+        };
+
+        if (requiresGrad)
+        {
+            Grad = Np.zeros_like(data);
+        }
+    }
+
+    public Tensor(List<List<List<float>>> data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    {
+        Data = new IntermediateArray(data, 3);
+        CtorCommon(requiresGrad, operation);
+
+        Shape = new List<int>()
+        {
+            data.Count,
+            data[0].Count,
+            data[0][0].Count
+        };
+
+        if (requiresGrad)
+        {
+            Grad = Np.zeros_like(data);
+        }
+    }
+
+    public Tensor(IntermediateArray data, bool requiresGrad = false, dynamic? operation = null) // !!!!!!!!!!!!!!!!!!!
+    {
+        Data = data;
+        CtorCommon(requiresGrad, operation);
+
+        if (data.DataZeroDimArray != null)
+        {
+            Shape = new List<int>();
+
+            if (requiresGrad)
+            {
+                Grad = Np.zeros_like(data.DataZeroDimArray);
+            }
+        }
+
+        else if (data.DataOneDimArray != null)
+        {
+            Shape = new List<int>()
+            {
+                data.DataOneDimArray.Count
+            };
+
+            if (requiresGrad)
+            {
+                Grad = Np.zeros_like(data);
+            }
+        }
+
+        else if (data.DataTwoDimArray != null)
+        {
+            Shape = new List<int>()
+            {
+                data.DataTwoDimArray.Count,
+                data.DataTwoDimArray[0].Count
+            };
+
+            if (requiresGrad)
+            {
+                Grad = Np.zeros_like(data);
+            }
+        }
+
+        else if (data.DataThreeDimArray != null)
+        {
+            Shape = new List<int>()
+            {
+                data.DataThreeDimArray.Count,
+                data.DataThreeDimArray[0].Count,
+                data.DataThreeDimArray[0][0].Count
+            };
+
+            if (requiresGrad)
+            {
+                Grad = Np.zeros_like(data);
+            }
+        }
+    }
+
+    void CtorCommon(bool requiresGrad, dynamic? operation)
+    {
+        RequiresGrad = requiresGrad;
+        Operation = operation;
+        Children = new List<Tensor>();
+    }
+
+    public override string ToString()
+    {
+        return $"({Data}, requires_grad = {RequiresGrad})";
     }
 
     /// <summary>
@@ -53,7 +158,7 @@ public class Tensor
 
         if (grad == null)
         {
-            grad = np.ones_like(_data);
+            grad = np.ones_like(Data);
         }
 
         Grad += grad;
@@ -87,7 +192,7 @@ public class Tensor
     /// </summary>
     public void ZeroGrad()
     {
-        Grad = Np.zeros_like(_data);
+        Grad = Np.zeros_like(Data);
     }
 
     /// <summary>
@@ -231,7 +336,7 @@ public class Tensor
     /// <returns></returns>
     public static Tensor Gt(Tensor self, Tensor other)
     {
-        return self._data > other.ToArray();
+        return self.Data > other.Data;
     }
 
     /// <summary>
@@ -326,7 +431,7 @@ public class Tensor
             bool requiresGrad = a.RequiresGrad || b.RequiresGrad;
 
             // Get new Tensors's data:
-            object data = a._data + b._data;
+            IntermediateArray data = a.Data + b.Data;
 
             // Create new Tensor's data:
             Tensor z = new Tensor(data, requiresGrad, operation: new AddClass());
@@ -409,7 +514,7 @@ public class Tensor
             bool requiresGrad = a.RequiresGrad;
 
             // Get new Tensors's data:
-            object data = 0 - a._data;
+            IntermediateArray data = 0 - a.Data;
 
             // Create new Tensor's data:
             Tensor z = new Tensor(data, requiresGrad, operation: new NegClass());
@@ -446,7 +551,7 @@ public class Tensor
             bool requiresGrad = a.RequiresGrad || b.RequiresGrad;
 
             // Get new Tensors's data:
-            object data = a._data * b._data;
+            IntermediateArray data = a.Data * b.Data;
 
             // Create new Tensor's data:
             Tensor z = new Tensor(data, requiresGrad, operation: new MulClass());
@@ -471,7 +576,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/da(a*b) = b, apply chain rule:
-                var da = dz * b._data;
+                var da = dz * b.Data;
 
                 // Rescale gradient to have the same shape "a":
                 int gradDim = dz.Shape.Count;
@@ -497,7 +602,7 @@ public class Tensor
             if (b.RequiresGrad)
             {
                 // d/da(a*b) = a, apply chain rule:
-                var db = dz * a._data;
+                var db = dz * a.Data;
 
                 // Rescale gradient to have the same shape "a":
                 int gradDim = dz.Shape.Count;
@@ -531,7 +636,7 @@ public class Tensor
             bool requiresGrad = a.RequiresGrad || b.RequiresGrad;
 
             // Get new Tensors's data:
-            object data = a._data / b._data;
+            IntermediateArray data = a.Data / b.Data;
 
             // Create new Tensor's data:
             Tensor z = new Tensor(data, requiresGrad, operation: new DivClass());
@@ -556,7 +661,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/da(a*b) = b, apply chain rule:
-                var da = dz * (1 / b._data);
+                var da = dz * (1 / b.Data);
 
                 // Rescale gradient to have the same shape "a":
                 int gradDim = dz.Shape.Count;
@@ -582,7 +687,7 @@ public class Tensor
             if (b.RequiresGrad)
             {
                 // d/da(a*b) = a, apply chain rule:
-                var db = -dz * a._data / (b._data ^ 2);
+                var db = -dz * a.Data / (b.Data ^ 2);
 
                 // Rescale gradient to have the same shape "a":
                 int gradDim = dz.Shape.Count;
@@ -615,7 +720,7 @@ public class Tensor
         public Tensor Forward(Tensor tensorA, Tensor tensorB)
         {
             bool requiresGrad = tensorA.RequiresGrad;
-            var data = tensorA._data ^ tensorB._data;
+            var data = tensorA.Data ^ tensorB.Data;
 
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new PowClass());
 
@@ -634,7 +739,7 @@ public class Tensor
 
             if (tensorA.RequiresGrad)
             {
-                var da = dz * (tensorB._data * tensorA._data ^ (tensorB._data - 1));
+                var da = dz * (tensorB.Data * tensorA.Data ^ (tensorB.Data - 1));
                 int gradDim = da.Shape.Count;
                 int inDim = tensorA.Shape.Count;
 
@@ -666,7 +771,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad || tensorB.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA._data.Matmul(tensorB._data);
+            var data = tensorA.Data.Matmul(tensorB.Data);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MatMulClass());
@@ -691,7 +796,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Backprop through the matmul:
-                var da = dz.Matmul(b._data.SwapAxes(-1, -2));
+                var da = dz.Matmul(b.Data.SwapAxes(-1, -2));
 
                 // Get difference between "a" size and upstream "da" size, to broadcast grad into "a":
                 int gradDim = dz.Shape.Count;
@@ -709,7 +814,7 @@ public class Tensor
             if (b.RequiresGrad)
             {
                 // Backprop through the matmul:
-                var db = a._data.SwapAxes(-1, -2).Matmuli(dz);
+                var db = a.Data.SwapAxes(-1, -2).Matmuli(dz);
 
                 // Get difference between "b" size and upstream "db" size, to broadcast grad into "b":
                 int gradDim = dz.Shape.Count;
@@ -735,7 +840,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = Np.Exp(tensorA._data);
+            var data = Np.Exp(tensorA.Data);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ExpClass());
@@ -774,7 +879,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = Np.Log(tensorA._data);
+            var data = Np.Log(tensorA.Data);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new LogClass());
@@ -795,7 +900,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/da(ln(a)) = (1/a), apply the chain rule to the derivative of the natural log:
-                var da = (1 / a._data) * dz;
+                var da = (1 / a.Data) * dz;
                 a.Backward(da, z);
             }
         }
@@ -811,7 +916,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = Np.Sqrt(tensorA._data);
+            var data = Np.Sqrt(tensorA.Data);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SqrtClass());
@@ -850,7 +955,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA._data.Sum(axis: dim, keepdims: keepdims);
+            var data = tensorA.Data.Sum(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SumClass());
@@ -889,7 +994,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA._data.Mean(axis: dim, keepdims: keepdims);
+            var data = tensorA.Data.Mean(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MeanClass());
@@ -932,7 +1037,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = np.max(tensorA._data, axis: dim, keepdims: keepdims);
+            var data = np.max(tensorA.Data, axis: dim, keepdims: keepdims);
 
             if (keepdims)
             {
@@ -967,15 +1072,15 @@ public class Tensor
                 {
                     // Broadcast upstream derivative to the size of "a":
                     dz = np.expand_dims(dz, axis: dim);
-                    dz = dz * np.ones_like(a._data);
+                    dz = dz * np.ones_like(a.Data);
 
                     // Broadcast upstream output (max) to the size of "a":
                     max = np.expand_dims(data, axis: dim);
-                    max = max * np.ones_like(a._data);
+                    max = max * np.ones_like(a.Data);
                 }
 
                 // Add upstream gradients to the [max] values:
-                var da = dz * np.equal(a._data, max);
+                var da = dz * np.equal(a.Data, max);
 
                 a.Backward(da, z);
             }
@@ -994,7 +1099,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA._data.var(axis: dim, keepdims: keepdims);
+            var data = tensorA.Data.var(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new VarClass());
@@ -1019,7 +1124,7 @@ public class Tensor
                 // Propagate through the var(x) operation:
 
                 var da = np.ones(a.Shape) * dz;
-                da = da * 2 * (a._data - a._data.mean(axis: dim, keepDims: true)) / np.prod(np.array(a.Shape)[dim]);
+                da = da * 2 * (a.Data - a.Data.mean(axis: dim, keepDims: true)) / np.prod(np.array(a.Shape)[dim]);
 
                 a.Backward(da, z);
             }
@@ -1036,7 +1141,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA._data.reshape(*shape);
+            var data = tensorA.Data.reshape(*shape);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ReshapeClass());
@@ -1077,7 +1182,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA._data.swapaxes(*dims);
+            var data = tensorA.Data.swapaxes(*dims);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new TransposeClass());
@@ -1190,7 +1295,7 @@ public class Tensor
                 }
             }
 
-            object data;
+            IntermediateArray data;
 
             // Get new Tensor's data:
             data = np.stack(tensors, axis: dim);
@@ -1225,7 +1330,7 @@ public class Tensor
                 if (tensors[i].RequiresGrad)
                 {
                     // For every tensor that generated the output, get gradients relative to that part of "dz": 
-                    dim = dz[i].reshape(tensors[i]._data.Shape);
+                    dim = dz[i].reshape(tensors[i].Data.Shape);
 
                     tensors[i].Backward(dim, z);
                 }
@@ -1245,7 +1350,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            object data = np.where(condition, tensorA._data, value);
+            IntermediateArray data = np.where(condition, tensorA.Data, value);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MaskedFillClass());
@@ -1287,7 +1392,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            object data = tensorA._data[index];
+            IntermediateArray data = tensorA.Data[index];
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SliceClass());
@@ -1310,7 +1415,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Add upstream gradients to [index] part of da.
-                Tensor da = np.zeros_like(a._data);
+                Tensor da = np.zeros_like(a.Data);
                 da[index] = dz;
 
                 a.Backward(da, z);
