@@ -1,10 +1,8 @@
-﻿using System.Runtime.InteropServices;
-
-namespace AILibrary.Temp;
+﻿namespace AILibrary.Temp;
 
 public static class TensorUtilities
 {
-    public static IntermediateArray Zeros(int x)
+    public static OldIntermediateArray Zeros(int x)
     {
         List<float> output = new List<float>();
 
@@ -13,10 +11,10 @@ public static class TensorUtilities
             output[i] = 0F;
         }
 
-        return new IntermediateArray(output, 1);
+        return new OldIntermediateArray(output, 1);
     }
 
-    public static IntermediateArray Zeros(int x, int y)
+    public static OldIntermediateArray Zeros(int x, int y)
     {
         List<List<float>> output = new List<List<float>>();
 
@@ -28,10 +26,10 @@ public static class TensorUtilities
             }
         }
 
-        return new IntermediateArray(output, 2);
+        return new OldIntermediateArray(output, 2);
     }
 
-    public static IntermediateArray Zeros(int x, int y, int z)
+    public static OldIntermediateArray Zeros(int x, int y, int z)
     {
         List<List<float>> output = new List<List<float>>();
 
@@ -46,14 +44,14 @@ public static class TensorUtilities
             }
         }
 
-        return new IntermediateArray(output, 3);
+        return new OldIntermediateArray(output, 3);
     }
 
-    public static IntermediateArray Zeros(this IntermediateArray array)
+    public static OldIntermediateArray Zeros(this OldIntermediateArray array)
     {
         if (array.DataZeroDimArray != null)
         {
-            return new IntermediateArray(0, 0);
+            return new OldIntermediateArray(0, 0);
         }
 
         else if (array.DataOneDimArray != null)
@@ -77,7 +75,7 @@ public static class TensorUtilities
         }
     }
 
-    public static IntermediateArray Ones(int x)
+    public static OldIntermediateArray Ones(int x)
     {
         List<float> output = new List<float>();
 
@@ -86,10 +84,10 @@ public static class TensorUtilities
             output[i] = 1F;
         }
 
-        return new IntermediateArray(output, 1);
+        return new OldIntermediateArray(output, 1);
     }
 
-    public static IntermediateArray Ones(int x, int y)
+    public static OldIntermediateArray Ones(int x, int y)
     {
         List<List<float>> output = new List<List<float>>();
 
@@ -101,10 +99,10 @@ public static class TensorUtilities
             }
         }
 
-        return new IntermediateArray(output, 2);
+        return new OldIntermediateArray(output, 2);
     }
 
-    public static IntermediateArray Ones(int x, int y, int z)
+    public static OldIntermediateArray Ones(int x, int y, int z)
     {
         List<List<float>> output = new List<List<float>>();
 
@@ -119,14 +117,14 @@ public static class TensorUtilities
             }
         }
 
-        return new IntermediateArray(output, 3);
+        return new OldIntermediateArray(output, 3);
     }
 
-    public static IntermediateArray Ones(this IntermediateArray array)
+    public static OldIntermediateArray Ones(this OldIntermediateArray array)
     {
         if (array.DataZeroDimArray != null)
         {
-            return new IntermediateArray(0, 0);
+            return new OldIntermediateArray(0, 0);
         }
 
         else if (array.DataOneDimArray != null)
@@ -150,7 +148,7 @@ public static class TensorUtilities
         }
     }
 
-    public static IntermediateArray Ones(this List<int> array)
+    public static OldIntermediateArray Ones(this List<int> array)
     {
         if (array.Count == 1)
         {
@@ -173,7 +171,7 @@ public static class TensorUtilities
         }
     }
 
-    public static IntermediateArray EulExp(this IntermediateArray array)
+    public static OldIntermediateArray EulExp(this OldIntermediateArray array)
     {
         if (array.DataZeroDimArray != null)
         {
@@ -216,7 +214,7 @@ public static class TensorUtilities
         return array;
     }
 
-    public static IntermediateArray Log(this IntermediateArray array)
+    public static OldIntermediateArray Log(this OldIntermediateArray array)
     {
         if (array.DataZeroDimArray != null)
         {
@@ -259,7 +257,7 @@ public static class TensorUtilities
         return array;
     }
 
-    public static IntermediateArray Sqrt(this IntermediateArray array)
+    public static OldIntermediateArray Sqrt(this OldIntermediateArray array)
     {
         if (array.DataZeroDimArray != null)
         {
@@ -302,7 +300,7 @@ public static class TensorUtilities
         return array;
     }
 
-    public static float[] FlattenIntoOneDim(this IntermediateArray array)
+    public static float[] FlattenIntoOneDim(this OldIntermediateArray array)
     {
         List<float> output = new List<float>();
 
@@ -345,138 +343,5 @@ public static class TensorUtilities
         }
 
         return output.ToArray();
-    }
-
-    public static IntermediateArray Sum(this IntermediateArray array, int dim = 0, int[]? axes = null, bool keepdims = false) 
-    {
-        NDArray sum = SumInternal(new NDArray(array.FlattenIntoOneDim(), array.Shape.ToArray()), dim: dim, axes: axes, keepDims: keepdims);
-        return new IntermediateArray(sum.Expand(), sum.Shape.Length);
-    }
-
-    private class NDArray
-    {
-        public float[] Data { get; }
-        public int[] Shape { get; }
-
-        public NDArray(float[] data, int[] shape)
-        {
-            int size = shape.Aggregate(1, (a, b) => a * b);
-            if (size != data.Length)
-                throw new ArgumentException("Data length does not match shape.");
-            Data = data;
-            Shape = shape;
-        }
-
-        // Helper: compute flat index
-        private int GetFlatIndex(int[] indices)
-        {
-            int flatIndex = 0;
-            int stride = 1;
-            for (int i = Shape.Length - 1; i >= 0; i--)
-            {
-                flatIndex += indices[i] * stride;
-                stride *= Shape[i];
-            }
-            return flatIndex;
-        }
-
-        public float this[params int[] indices]
-        {
-            get => Data[GetFlatIndex(indices)];
-            set => Data[GetFlatIndex(indices)] = value;
-        }
-
-        // Expand: turn flat Data into jagged float[][]…[]
-        public object Expand()
-        {
-            int offset = 0;
-            return ExpandRecursive(Shape, ref offset);
-        }
-
-        private object ExpandRecursive(int[] shape, ref int offset)
-        {
-            if (shape.Length == 1)
-            {
-                // Base case: return a 1D float[]
-                float[] arr = new float[shape[0]];
-                Array.Copy(Data, offset, arr, 0, shape[0]);
-                offset += shape[0];
-                return arr;
-            }
-            else
-            {
-                // Recursive case: build jagged array
-                int dim = shape[0];
-                object[] arr = new object[dim];
-                int[] subShape = shape.Skip(1).ToArray();
-                for (int i = 0; i < dim; i++)
-                    arr[i] = ExpandRecursive(subShape, ref offset);
-                return arr;
-            }
-        }
-    }
-
-    private static NDArray SumInternal(NDArray array, int dim = 0, int[]? axes = null, bool keepDims = false)
-    {
-        if (axes == null || axes.Length == 0)
-        {
-            // Sum all elements.
-            float total = array.Data.Sum();
-            return new NDArray(new float[] { total }, keepDims ? new int[array.Shape.Length] : new int[0]);
-        }
-
-        axes = axes.Distinct().OrderBy(a => a).ToArray();
-
-        int[] resultShape = array.Shape.ToArray();
-        foreach (int axis in axes)
-        {
-            if (axis < 0 || axis >= array.Shape.Length)
-                throw new ArgumentException($"Invalid axis {axis} for shape {string.Join(",", array.Shape)}");
-            resultShape[axis] = 1;
-        }
-        if (!keepDims)
-            resultShape = resultShape.Where((_, i) => !axes.Contains(i)).ToArray();
-
-        // Allocate result
-        int resultSize = resultShape.Length == 0 ? 1 : resultShape.Aggregate(1, (a, b) => a * b);
-        float[] resultData = new float[resultSize];
-
-        // Iterate over all indices of original array
-        int[] indices = new int[array.Shape.Length];
-        void Recurse(int dim, int flatResultIndex, int[] resultIndices)
-        {
-            if (dim == array.Shape.Length)
-            {
-                resultData[flatResultIndex] += array[indices];
-                return;
-            }
-
-            for (int i = 0; i < array.Shape[dim]; i++)
-            {
-                indices[dim] = i;
-
-                int nextResultIndex = flatResultIndex;
-                int[] nextResultIndices = (int[])resultIndices.Clone();
-
-                if (!axes.Contains(dim))
-                {
-                    int stride = 1;
-                    for (int d = resultShape.Length - 1; d > 0; d--)
-                        stride *= resultShape[d];
-
-                    int idx = 0;
-                    for (int j = 0; j < nextResultIndices.Length; j++)
-                        idx = idx * resultShape[j] + nextResultIndices[j];
-
-                    nextResultIndex = idx;
-                }
-
-                Recurse(dim + 1, nextResultIndex, nextResultIndices);
-            }
-        }
-
-        Recurse(dim, 0, new int[resultShape.Length]);
-
-        return new NDArray(resultData, resultShape);
     }
 }

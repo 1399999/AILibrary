@@ -6,69 +6,51 @@ public class Tensor
     public bool RequiresGrad { get; private set; }
     public dynamic? Operation { get; private set; }
     public List<Tensor> Children { get; private set; } = new List<Tensor>();
-    public List<int> Shape { get; private set; }
+    public int[] Shape { get; private set; }
     public IntermediateArray? Grad { get; private set; }
 
     public Tensor(float data, bool requiresGrad = false, dynamic? operation = null)
     {
-        Data = new IntermediateArray(data, 0);
+        Data = new IntermediateArray(new float[] { data }, new int[] { 1 });
         CtorCommon(requiresGrad, operation);
-        Shape = new List<int>();
+        Shape = new int[0];
 
         if (requiresGrad)
         {
-            Grad = new IntermediateArray(0, 0);
+            Grad = new IntermediateArray(new float[] { 0 }, new int[] { 1 });
         }
     }
 
-    public Tensor(List<float> data, bool requiresGrad = false, dynamic? operation = null)
+    public Tensor(float[] data, bool requiresGrad = false, dynamic? operation = null)
     {
-        Data = new IntermediateArray(data, 1);
+        Data = new IntermediateArray(data, new int[] { data.Length });
         CtorCommon(requiresGrad, operation);
-
-        Shape = new List<int>()
-        {
-            data.Count
-        };
 
         if (requiresGrad)
         {
-            Grad = TensorUtilities.Zeros(data.Count);
+            Grad = TensorUtilities.Zeros(data.Length);
         }
     }
 
-    public Tensor(List<List<float>> data, bool requiresGrad = false, dynamic? operation = null)
+    public Tensor(float[][] data, bool requiresGrad = false, dynamic? operation = null)
     {
-        Data = new IntermediateArray(data, 2);
+        Data = new IntermediateArray(data);
         CtorCommon(requiresGrad, operation);
-
-        Shape = new List<int>()
-        {
-            data.Count,
-            data[0].Count
-        };
 
         if (requiresGrad)
         {
-            Grad = TensorUtilities.Zeros(data.Count, data[0].Count);
+            Grad = TensorUtilities.Zeros(data.Length, data[0].Length);
         }
     }
 
-    public Tensor(List<List<List<float>>> data, bool requiresGrad = false, dynamic? operation = null)
+    public Tensor(float[][][] data, bool requiresGrad = false, dynamic? operation = null)
     {
-        Data = new IntermediateArray(data, 3);
+        Data = new IntermediateArray(data);
         CtorCommon(requiresGrad, operation);
-
-        Shape = new List<int>()
-        {
-            data.Count,
-            data[0].Count,
-            data[0][0].Count
-        };
 
         if (requiresGrad)
         {
-            Grad = TensorUtilities.Zeros(data.Count, data[0].Count, data[0][0].Count);
+            Grad = TensorUtilities.Zeros(data.Length, data[0].Length, data[0][0].Length);
         }
     }
 
@@ -81,49 +63,13 @@ public class Tensor
         {
             Grad = data.Zeros();
         }
-
-        if (data.DataZeroDimArray != null)
-        {
-            Shape = new List<int>();
-        }
-
-        else if (data.DataOneDimArray != null)
-        {
-            Shape = new List<int>()
-            {
-                data.DataOneDimArray.Count
-            };
-        }
-
-        else if (data.DataTwoDimArray != null)
-        {
-            Shape = new List<int>()
-            {
-                data.DataTwoDimArray.Count,
-                data.DataTwoDimArray[0].Count
-            };
-        }
-
-        else if (data.DataThreeDimArray != null)
-        {
-            Shape = new List<int>()
-            {
-                data.DataThreeDimArray.Count,
-                data.DataThreeDimArray[0].Count,
-                data.DataThreeDimArray[0][0].Count
-            };
-        }
-
-        else
-        {
-            throw new ArgumentException();
-        }
     }
 
     void CtorCommon(bool requiresGrad, dynamic? operation)
     {
         RequiresGrad = requiresGrad;
         Operation = operation;
+        Shape = Data.Shape;
     }
 
     public override string ToString()
@@ -436,19 +382,19 @@ public class Tensor
                 var da = dz;
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Dimensions;
-                int inDim = a.Shape.Count;
+                int gradDim = dz.Shape.Length;
+                int inDim = a.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
                     da = da.Sum(dim: 0);
                 }
 
-                for (int n = 0; n < a.Shape.Count; n++)
+                for (int n = 0; n < a.Shape.Length; n++)
                 {
                     if (a.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepDims: true);
+                        da = da.Sum(dim: n, keepdims: true);
                     }
                 }
 
@@ -461,19 +407,19 @@ public class Tensor
                 var db = dz;
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Dimensions;
-                int inDim = b.Shape.Count;
+                int gradDim = dz.Shape.Length;
+                int inDim = b.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
                     db = db.Sum(dim: 0);
                 }
 
-                for (int n = 0; n < b.Shape.Count; n++)
+                for (int n = 0; n < b.Shape.Length; n++)
                 {
                     if (b.Shape[n] == 1)
                     {
-                        db = db.Sum(dim: n, keepDims: true);
+                        db = db.Sum(dim: n, keepdims: true);
                     }
                 }
 
