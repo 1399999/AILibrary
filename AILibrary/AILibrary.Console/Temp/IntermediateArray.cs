@@ -9,29 +9,39 @@ public class IntermediateArray
     public List<List<float>>? DataTwoDimArray { get; set; }
     public List<List<List<float>>>? DataThreeDimArray { get; set; }
     public int Dimensions { get; set; }
+    public List<int> Shape { get; set; }
 
     public IntermediateArray(object data, int dimensions)
     {
         Dimensions = dimensions;
+        Shape = new List<int>();
 
         if (dimensions == 0)
         {
             DataZeroDimArray = (float)data;
+            
         }
 
         else if (dimensions == 1)
         {
             DataOneDimArray = (List<float>)data;
+            Shape.Add(DataOneDimArray.Count);
         }
 
         else if (dimensions == 2)
         {
             DataTwoDimArray = (List<List<float>>)data;
+            Shape.Add(DataTwoDimArray.Count);
+            Shape.Add(DataTwoDimArray[0].Count);
+            
         }
 
         else if (dimensions == 3)
         {
             DataThreeDimArray = (List<List<List<float>>>)data;
+            Shape.Add(DataThreeDimArray.Count);
+            Shape.Add(DataThreeDimArray[0].Count);
+            Shape.Add(DataThreeDimArray[0][0].Count);
         }
     }
 

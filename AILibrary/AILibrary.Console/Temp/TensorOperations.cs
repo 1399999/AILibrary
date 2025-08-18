@@ -441,14 +441,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    da = da.GetSum(dim: 0);
+                    da = da.Sum(dim: 0);
                 }
 
                 for (int n = 0; n < a.Shape.Count; n++)
                 {
                     if (a.Shape[n] == 1)
                     {
-                        da = da.GetSum(dim: n, keepDims: true);
+                        da = da.Sum(dim: n, keepDims: true);
                     }
                 }
 
@@ -461,19 +461,19 @@ public class Tensor
                 var db = dz;
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Shape.Count;
+                int gradDim = dz.Dimensions;
                 int inDim = b.Shape.Count;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    db = db.GetSum(dim: 0);
+                    db = db.Sum(dim: 0);
                 }
 
                 for (int n = 0; n < b.Shape.Count; n++)
                 {
                     if (b.Shape[n] == 1)
                     {
-                        db = db.GetSum(dim: n, keepDims: true);
+                        db = db.Sum(dim: n, keepDims: true);
                     }
                 }
 
@@ -557,7 +557,7 @@ public class Tensor
                 var da = dz * b.Data;
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Shape.Count;
+                int gradDim = dz.Dimensions;
                 int inDim = a.Shape.Count;
 
                 for (int i = 0; i < gradDim - inDim; i++)
@@ -583,7 +583,7 @@ public class Tensor
                 var db = dz * a.Data;
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Shape.Count;
+                int gradDim = dz.Dimensions;
                 int inDim = b.Shape.Count;
 
                 for (int i = 0; i < gradDim - inDim; i++)
@@ -642,7 +642,7 @@ public class Tensor
                 var da = dz * (1 / b.Data);
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Shape.Count;
+                int gradDim = dz.Dimensions;
                 int inDim = a.Shape.Count;
 
                 for (int i = 0; i < gradDim - inDim; i++)
@@ -668,7 +668,7 @@ public class Tensor
                 var db = -dz * a.Data / (b.Data ^ 2);
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Shape.Count;
+                int gradDim = dz.Dimensions;
                 int inDim = b.Shape.Count;
 
                 for (int i = 0; i < gradDim - inDim; i++)
@@ -777,7 +777,7 @@ public class Tensor
                 var da = dz.Matmul(b.Data.SwapAxes(-1, -2));
 
                 // Get difference between "a" size and upstream "da" size, to broadcast grad into "a":
-                int gradDim = dz.Shape.Count;
+                int gradDim = dz.Dimensions;
                 int inDim = a.Shape.Count;
 
                 for (int i = 0; i < gradDim - inDim; i++)
@@ -795,7 +795,7 @@ public class Tensor
                 var db = a.Data.SwapAxes(-1, -2).Matmuli(dz);
 
                 // Get difference between "b" size and upstream "db" size, to broadcast grad into "b":
-                int gradDim = dz.Shape.Count;
+                int gradDim = dz.Dimensions;
                 int inDim = b.Shape.Count;
 
                 for (int i = 0; i < gradDim - inDim; i++)
@@ -933,7 +933,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.Sum(axis: dim, keepdims: keepdims);
+            var data = tensorA.Data.Sum(axes: new int[1] { dim }, keepdims: keepdims);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SumClass());
