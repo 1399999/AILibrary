@@ -1,7 +1,7 @@
 ﻿using System;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace AILibrary.Temp;
+namespace AILibrary.Framework;
 
 public class IntermediateArray
 {
@@ -107,17 +107,17 @@ public class IntermediateArray
         if (axes == null || axes.Length == 0)
         {
             // Sum all elements.
-            float total = this.InternalData.Sum();
-            return new IntermediateArray(new float[] { total }, keepdims ? new int[this.Shape.Length] : new int[0]);
+            float total = InternalData.Sum();
+            return new IntermediateArray(new float[] { total }, keepdims ? new int[Shape.Length] : new int[0]);
         }
 
         axes = axes.Distinct().OrderBy(a => a).ToArray();
 
-        int[] resultShape = this.Shape.ToArray();
+        int[] resultShape = Shape.ToArray();
         foreach (int axis in axes)
         {
-            if (axis < 0 || axis >= this.Shape.Length)
-                throw new ArgumentException($"Invalid axis {axis} for shape {string.Join(",", this.Shape)}");
+            if (axis < 0 || axis >= Shape.Length)
+                throw new ArgumentException($"Invalid axis {axis} for shape {string.Join(",", Shape)}");
             resultShape[axis] = 1;
         }
         if (!keepdims)
@@ -128,16 +128,16 @@ public class IntermediateArray
         float[] resultData = new float[resultSize];
 
         // Iterate over all indices of original array
-        int[] indices = new int[this.Shape.Length];
+        int[] indices = new int[Shape.Length];
         void Recurse(int dim, int flatResultIndex, int[] resultIndices)
         {
-            if (dim == this.Shape.Length)
+            if (dim == Shape.Length)
             {
                 resultData[flatResultIndex] += this[indices];
                 return;
             }
 
-            for (int i = 0; i < this.Shape[dim]; i++)
+            for (int i = 0; i < Shape[dim]; i++)
             {
                 indices[dim] = i;
 
@@ -789,7 +789,7 @@ public class IntermediateArray
 
         float[] resultData = new float[a.InternalData.Length];
         for (int i = 0; i < resultData.Length; i++)
-            resultData[i] = (a.InternalData[i] == b.InternalData[i]) ? 1.0f : 0.0f;
+            resultData[i] = a.InternalData[i] == b.InternalData[i] ? 1.0f : 0.0f;
 
         return new IntermediateArray(resultData, a.Shape.ToArray());
     }
@@ -900,7 +900,7 @@ public class IntermediateArray
         else if (Shape.Length == 1)
         {
             // Simple 1D variance
-            return this.Var(null, keepdims);
+            return Var(null, keepdims);
         }
         else
         {
@@ -943,7 +943,7 @@ public class IntermediateArray
             throw new ArgumentException("Cannot reshape array: total size mismatch.");
 
         // Return new NDArray with same Data but new shape
-        return new IntermediateArray(this.InternalData, newShape);
+        return new IntermediateArray(InternalData, newShape);
     }
 
     /// <summary>

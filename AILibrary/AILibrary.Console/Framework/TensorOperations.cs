@@ -1,6 +1,6 @@
 ﻿using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace AILibrary.Temp;
+namespace AILibrary.Framework;
 
 public class Tensor
 {
@@ -159,8 +159,8 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public static Tensor operator -(Tensor self, Tensor other) => self + (other * -1);
-    public static Tensor operator -(Tensor self, float other) => self + (new Tensor(other) * -1);
+    public static Tensor operator -(Tensor self, Tensor other) => self + other * -1;
+    public static Tensor operator -(Tensor self, float other) => self + new Tensor(other) * -1;
     public static Tensor operator -(int self, Tensor other) 
     {
         if (self == 0)
@@ -650,7 +650,7 @@ public class Tensor
 
             if (tensorA.RequiresGrad)
             {
-                var da = dz * (tensorB.Data * tensorA.Data ^ (tensorB.Data - tensorB.Data.OnesLike()));
+                var da = dz * (tensorB.Data * tensorA.Data ^ tensorB.Data - tensorB.Data.OnesLike());
                 int gradDim = da.Shape.Length;
                 int inDim = tensorA.Shape.Length;
 
@@ -813,7 +813,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/da(ln(a)) = (1/a), apply the chain rule to the derivative of the natural log:
-                var da = (a.Data.OnesLike() / a.Data) * dz;
+                var da = a.Data.OnesLike() / a.Data * dz;
                 a.Backward(da, z);
             }
         }
@@ -853,7 +853,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/dx(sqrt(a)) = (1/2) * (1/sqrt(a)), apply the chain rule to the derivative of the square root:
-                var da = (1 / 2) * (data.OnesLike() / data) * dz;
+                var da = 1 / 2 * (data.OnesLike() / data) * dz;
                 a.Backward(da, z);
             }
         }
