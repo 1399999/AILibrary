@@ -292,7 +292,7 @@ public class Tensor
     /// <param name="dim">Dimention the variance will be computed across</param>
     /// <param name="keepDims">Wether to broadcast result to same shape as input.</param>
     /// <returns>Returns the variance of all values across the "dim" dimention.</returns>
-    public Tensor Vari(int dim = -1, bool keepDims = false)
+    public Tensor Var(int dim = -1, bool keepDims = false)
     {
         dynamic op = new VarClass();
         return op.Forward(this, dim, keepDims: keepDims);
@@ -303,7 +303,7 @@ public class Tensor
     /// </summary>
     /// <param name="shape">Dimention the variance will be computed across.</param>
     /// <returns>Returns the original tensor reshaped to the new shape given.</returns>
-    public Tensor Reshapei(dynamic shape) // !!!!!!!!!!!!!!
+    public Tensor Reshape(int[] shape)
     {
         dynamic op = new ReshapeClass();
         return op.Forward(this, shape);
@@ -314,10 +314,10 @@ public class Tensor
     /// </summary>
     /// <param name="dims">Two dimentions to be transposed.</param>
     /// <returns>Returns the original tensor with the two given dimentions transposed.</returns>
-    public Tensor Transposei(dynamic dims) // !!!!!!!!!!!!!!
+    public Tensor Transpose(int axis1, int axis2)
     {
         dynamic op = new TransposeClass();
-        return op.Forward(this, dims);
+        return op.Forward(this, axis1, axis2);
     }
 
     /// <summary>
@@ -326,7 +326,7 @@ public class Tensor
     /// <param name="condiditon">Matrix with True and False. Where this is False, will replace original with value.</param>
     /// <param name="value">Value to fill Tensor with, where condition is True.</param>
     /// <returns>Returns the original tensor with the values where condition is True set to "value".</returns>
-    public Tensor MaskedFilli(dynamic condition, float value) // !!!!!!!!!!!!!!
+    public Tensor MaskedFill(IntermediateArray condition, float value)
     {
         dynamic op = new MaskedFillClass();
         return op.Forward(this, condition, value);
@@ -903,7 +903,7 @@ public class Tensor
 
         public int cacheExtension = 0;
 
-        public Tensor Forward(Tensor tensorA, int dim, bool keepdims) // !!!!!!!!!!!!!!!!!!!!
+        public Tensor Forward(Tensor tensorA, int dim, bool keepdims)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
@@ -1093,7 +1093,7 @@ public class Tensor
 
         public int[]? cacheExtension;
 
-        public Tensor Forward(Tensor tensorA, int axis1, int axis2) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        public Tensor Forward(Tensor tensorA, int axis1, int axis2)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
@@ -1271,7 +1271,7 @@ public class Tensor
 
         public dynamic? cacheExtension;
 
-        public Tensor Forward(Tensor tensorA, IntermediateArray condition, float value) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        public Tensor Forward(Tensor tensorA, IntermediateArray condition, float value)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
@@ -1313,7 +1313,7 @@ public class Tensor
 
         public int cacheExtension = 0;
 
-        public Tensor Forward(Tensor tensorA, int index) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        public Tensor Forward(Tensor tensorA, int index)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
