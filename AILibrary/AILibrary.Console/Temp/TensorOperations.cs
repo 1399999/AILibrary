@@ -1,4 +1,6 @@
-﻿namespace AILibrary.Temp;
+﻿using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace AILibrary.Temp;
 
 public class Tensor
 {
@@ -25,44 +27,24 @@ public class Tensor
     {
         Data = new IntermediateArray(data, new int[] { data.Length });
         CtorCommon(requiresGrad, operation);
-
-        if (requiresGrad)
-        {
-            Grad = TensorUtilities.Zeros(data.Length);
-        }
     }
 
     public Tensor(float[][] data, bool requiresGrad = false, dynamic? operation = null)
     {
         Data = new IntermediateArray(data);
         CtorCommon(requiresGrad, operation);
-
-        if (requiresGrad)
-        {
-            Grad = TensorUtilities.Zeros(data.Length, data[0].Length);
-        }
     }
 
     public Tensor(float[][][] data, bool requiresGrad = false, dynamic? operation = null)
     {
         Data = new IntermediateArray(data);
         CtorCommon(requiresGrad, operation);
-
-        if (requiresGrad)
-        {
-            Grad = TensorUtilities.Zeros(data.Length, data[0].Length, data[0][0].Length);
-        }
     }
 
     public Tensor(IntermediateArray data, bool requiresGrad = false, dynamic? operation = null)
     {
         Data = data;
         CtorCommon(requiresGrad, operation);
-
-        if (requiresGrad)
-        {
-            Grad = data.Zeros();
-        }
     }
 
     void CtorCommon(bool requiresGrad, dynamic? operation)
@@ -70,6 +52,11 @@ public class Tensor
         RequiresGrad = requiresGrad;
         Operation = operation;
         Shape = Data.Shape;
+
+        if (requiresGrad)
+        {
+            Grad = Data.ZerosLike();
+        }
     }
 
     public override string ToString()
@@ -93,7 +80,7 @@ public class Tensor
 
         if (grad == null)
         {
-            grad = Data.Ones();
+            grad = Data.OnesLike();
         }
 
         Grad = Grad + grad;
@@ -127,7 +114,7 @@ public class Tensor
     /// </summary>
     public void ZeroGrad()
     {
-        Grad = Data.Zeros();
+        Grad = Data.ZerosLike();
     }
 
     /// <summary>
@@ -438,7 +425,7 @@ public class Tensor
             bool requiresGrad = a.RequiresGrad;
 
             // Get new Tensors's data:
-            IntermediateArray data = 0 - a.Data;
+            IntermediateArray data = -a.Data;
 
             // Create new Tensor's data:
             Tensor z = new Tensor(data, requiresGrad, operation: new NegClass());
@@ -459,7 +446,7 @@ public class Tensor
 
             if (a.RequiresGrad) 
             {
-                var da = 0 - dz;
+                var da = -dz;
                 a.Backward(da, z);
             }
         }
@@ -503,19 +490,19 @@ public class Tensor
                 var da = dz * b.Data;
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Dimensions;
-                int inDim = a.Shape.Count;
+                int gradDim = dz.Shape.Length;
+                int inDim = a.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
                     da = da.Sum(dim: 0);
                 }
 
-                for (int n = 0; n < a.Shape.Count; n++)
+                for (int n = 0; n < a.Shape.Length; n++)
                 {
                     if (a.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepDims: true);
+                        da = da.Sum(dim: n, keepdims: true);
                     }
                 }
 
@@ -529,19 +516,19 @@ public class Tensor
                 var db = dz * a.Data;
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Dimensions;
-                int inDim = b.Shape.Count;
+                int gradDim = dz.Shape.Length;
+                int inDim = b.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
                     db = db.Sum(dim: 0);
                 }
 
-                for (int n = 0; n < b.Shape.Count; n++)
+                for (int n = 0; n < b.Shape.Length; n++)
                 {
                     if (b.Shape[n] == 1)
                     {
-                        db = db.Sum(dim: n, keepDims: true);
+                        db = db.Sum(dim: n, keepdims: true);
                     }
                 }
 
@@ -585,22 +572,22 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/da(a*b) = b, apply chain rule:
-                var da = dz * (1 / b.Data);
+                var da = dz * (b.Data.OnesLike() / b.Data);
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Dimensions;
-                int inDim = a.Shape.Count;
+                int gradDim = dz.Shape.Length;
+                int inDim = a.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
                     da = da.Sum(dim: 0);
                 }
 
-                for (int n = 0; n < a.Shape.Count; n++)
+                for (int n = 0; n < a.Shape.Length; n++)
                 {
                     if (a.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepDims: true);
+                        da = da.Sum(dim: n, keepdims: true);
                     }
                 }
 
@@ -614,19 +601,19 @@ public class Tensor
                 var db = -dz * a.Data / (b.Data ^ 2);
 
                 // Rescale gradient to have the same shape "a":
-                int gradDim = dz.Dimensions;
-                int inDim = b.Shape.Count;
+                int gradDim = dz.Shape.Length;
+                int inDim = b.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
                     db = db.Sum(dim: 0);
                 }
 
-                for (int n = 0; n < b.Shape.Count; n++)
+                for (int n = 0; n < b.Shape.Length; n++)
                 {
                     if (b.Shape[n] == 1)
                     {
-                        db = db.Sum(dim: n, keepDims: true);
+                        db = db.Sum(dim: n, keepdims: true);
                     }
                 }
 
@@ -663,20 +650,20 @@ public class Tensor
 
             if (tensorA.RequiresGrad)
             {
-                var da = dz * (tensorB.Data * tensorA.Data ^ (tensorB.Data - 1));
-                int gradDim = da.Shape.Count;
-                int inDim = tensorA.Shape.Count;
+                var da = dz * (tensorB.Data * tensorA.Data ^ (tensorB.Data - tensorB.Data.OnesLike()));
+                int gradDim = da.Shape.Length;
+                int inDim = tensorA.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++) 
                 {
-                    da = da.Sum(axis: 0);
+                    da = da.Sum(axes: new int[] { 0 });
                 }
 
-                for (int n = 0; n < tensorA.Shape.Count; n++)
+                for (int n = 0; n < tensorA.Shape.Length; n++)
                 {
                     if (tensorA.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepDims: true);
+                        da = da.Sum(dim: n, keepdims: true);
                     }
                 }
 
@@ -723,12 +710,12 @@ public class Tensor
                 var da = dz.Matmul(b.Data.SwapAxes(-1, -2));
 
                 // Get difference between "a" size and upstream "da" size, to broadcast grad into "a":
-                int gradDim = dz.Dimensions;
-                int inDim = a.Shape.Count;
+                int gradDim = dz.Shape.Length;
+                int inDim = a.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    da = da.GetSum(dim: 0);
+                    da = da.Sum(dim: 0);
                 }
 
                 a.Backward(da, z);
@@ -738,11 +725,11 @@ public class Tensor
             if (b.RequiresGrad)
             {
                 // Backprop through the matmul:
-                var db = a.Data.SwapAxes(-1, -2).Matmuli(dz);
+                var db = a.Data.SwapAxes(-1, -2).Matmul(dz);
 
                 // Get difference between "b" size and upstream "db" size, to broadcast grad into "b":
-                int gradDim = dz.Dimensions;
-                int inDim = b.Shape.Count;
+                int gradDim = dz.Shape.Length;
+                int inDim = b.Shape.Length;
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
@@ -759,12 +746,14 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
+        public IntermediateArray? cacheExtension;
+
         public Tensor Forward(Tensor tensorA)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.EulExp();
+            IntermediateArray data = tensorA.Data.Exp();
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ExpClass());
@@ -773,7 +762,7 @@ public class Tensor
             Parents.Add(tensorA);
             tensorA.Children.Add(z);
             Cache.Add(tensorA);
-            Cache.Add(data);
+            cacheExtension = data;
 
             return z;
         }
@@ -781,7 +770,7 @@ public class Tensor
         public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            Tensor data = Cache[1];
+            IntermediateArray data = cacheExtension;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)
@@ -816,7 +805,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
 
@@ -824,7 +813,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/da(ln(a)) = (1/a), apply the chain rule to the derivative of the natural log:
-                var da = (1 / a.Data) * dz;
+                var da = (a.Data.OnesLike() / a.Data) * dz;
                 a.Backward(da, z);
             }
         }
@@ -834,13 +823,14 @@ public class Tensor
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
+        public IntermediateArray? cacheExtension;
 
         public Tensor Forward(Tensor tensorA)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.Sqrt();
+            IntermediateArray data = tensorA.Data.Sqrt();
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SqrtClass());
@@ -849,7 +839,7 @@ public class Tensor
             Parents.Add(tensorA);
             tensorA.Children.Add(z);
             Cache.Add(tensorA);
-            Cache.Add(data);
+            cacheExtension = data;
 
             return z;
         }
@@ -857,13 +847,13 @@ public class Tensor
         public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            Tensor data = Cache[1];
+            IntermediateArray data = cacheExtension;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)
             {
                 // d/dx(sqrt(a)) = (1/2) * (1/sqrt(a)), apply the chain rule to the derivative of the square root:
-                var da = (1 / 2) * (1 / data) * dz;
+                var da = (1 / 2) * (data.OnesLike() / data) * dz;
                 a.Backward(da, z);
             }
         }
@@ -892,7 +882,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
 
@@ -900,7 +890,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Expand upstream gradients to the shape of "a":
-                var da = a.Shape.Ones() * dz;
+                var da = a.Data.OnesLike() * dz;
                 a.Backward(da, z);
             }
         }
@@ -913,12 +903,12 @@ public class Tensor
 
         public int cacheExtension = 0;
 
-        public Tensor Forward(Tensor tensorA, int dim, bool keepdims)
+        public Tensor Forward(Tensor tensorA, int dim, bool keepdims) // !!!!!!!!!!!!!!!!!!!!
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.Mean(axis: dim, keepdims: keepdims);
+            var data = tensorA.Data.Mean(axis: dim);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MeanClass());
@@ -932,7 +922,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             int dim = cacheExtension;
@@ -941,8 +931,9 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Propagate through the mean(x) operation:
-                var da = a.Shape.Ones() * dz;
-                da /= np.prod(np.array(a.Shape)[dim]);
+                var da = a.Data.OnesLike() * dz;
+                throw new NotImplementedException();
+                //da /= a.Data[dim].Prod();
                 a.Backward(da, z);
             }
         }
@@ -953,19 +944,19 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public object? cacheExtension;
-        public int cacheExtension2;
+        public int? cacheExtension;
+        public IntermediateArray? cacheExtension2;
 
         public Tensor Forward(Tensor tensorA, int dim, bool keepdims = false)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = np.max(tensorA.Data, axis: dim, keepdims: keepdims);
+            IntermediateArray data = tensorA.Data.Max(axis: dim, keepdims: keepdims);
 
             if (keepdims)
             {
-                data = tensorA.Shape.Ones() * data;
+                data = tensorA.Data.OnesLike() * data;
             }
 
             // Create new Tensor:
@@ -981,11 +972,11 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            object? data = cacheExtension;
-            int dim = cacheExtension2;
+            IntermediateArray? data = cacheExtension2;
+            int? dim = cacheExtension;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)
@@ -995,16 +986,16 @@ public class Tensor
                 if (a.Shape != dz.Shape)
                 {
                     // Broadcast upstream derivative to the size of "a":
-                    dz = np.expand_dims(dz, axis: dim);
-                    dz = dz * a.Data.Ones();
+                    dz = dz.ExpandDims((int) dim);
+                    dz = dz * a.Data.OnesLike();
 
                     // Broadcast upstream output (max) to the size of "a":
-                    max = np.expand_dims(data, axis: dim);
-                    max = max * a.Data.Ones();
+                    max = data.ExpandDims((int)dim);
+                    max = max * a.Data.OnesLike();
                 }
 
                 // Add upstream gradients to the [max] values:
-                var da = dz * np.equal(a.Data, max);
+                var da = dz * a.Data.Equals(max);
 
                 a.Backward(da, z);
             }
@@ -1023,7 +1014,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.var(axis: dim, keepdims: keepdims);
+            var data = tensorA.Data.Var(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new VarClass());
@@ -1037,7 +1028,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             int dim = cacheExtension;
@@ -1047,10 +1038,11 @@ public class Tensor
             {
                 // Propagate through the var(x) operation:
 
-                var da = a.Shape.Ones() * dz;
-                da = da * 2 * (a.Data - a.Data.mean(axis: dim, keepDims: true)) / np.prod(np.array(a.Shape)[dim]);
+                IntermediateArray da = a.Data.OnesLike() * dz;
+                throw new NotImplementedException();
+                //da = da * 2 * (a.Data - a.Data.Mean(axis: dim, keepdims: true)) / np.array(a.Shape)[dim].Prod();
 
-                a.Backward(da, z);
+                //a.Backward(da, z);
             }
         }
     }
@@ -1060,12 +1052,12 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public Tensor Forward(Tensor tensorA, dynamic shape)
+        public Tensor Forward(Tensor tensorA, int[] shape)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.reshape(*shape);
+            var data = tensorA.Data.Reshape(shape);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ReshapeClass());
@@ -1078,7 +1070,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
 
@@ -1087,7 +1079,7 @@ public class Tensor
             {
                 // Propagate through the var(x) operation:
 
-                var da = dz.Reshapei(a.Shape);
+                var da = dz.Reshape(a.Shape);
 
                 a.Backward(da, z);
             }
@@ -1099,14 +1091,14 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public dynamic? cacheExtension;
+        public int[]? cacheExtension;
 
-        public Tensor Forward(Tensor tensorA, dynamic dims) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        public Tensor Forward(Tensor tensorA, int axis1, int axis2) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.swapaxes(*dims);
+            var data = tensorA.Data.SwapAxes(axis1, axis2);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new TransposeClass());
@@ -1115,22 +1107,22 @@ public class Tensor
             Parents.Add(tensorA);
             tensorA.Children.Add(z);
             Cache.Add(tensorA);
-            cacheExtension = dims;
+            cacheExtension = new int[] { axis1, axis2 };
 
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            dynamic? dims = cacheExtension;
+            int[]? dims = cacheExtension;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)
             {
                 // Propagate through the var(x) operation:
 
-                var da = dz.swapaxes(*dims);
+                var da = dz.SwapAxes(dims[0], dims[1]);
 
                 a.Backward(da, z);
             }
@@ -1156,10 +1148,15 @@ public class Tensor
                 }
             }
 
-            object data;
-
             // Get new Tensor's data:
-            data = np.concatenate(tensors, axis: dim);
+            List<IntermediateArray> temp = new List<IntermediateArray>();
+
+            for (int i = 0; i < tensors.Count; i++)
+            {
+                temp.Add(tensors[i].Data);
+            }
+
+            IntermediateArray data = IntermediateArray.Concatenate(temp.ToArray(), axis: dim);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new CatClass());
@@ -1178,12 +1175,12 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             List<Tensor> tensors = Cache;
             int dim = cacheExtension;
 
-            dz = np.split(dz, tensors.Count, dim);
+            dz = IntermediateArray.Concatenate(dz.Split(tensors.Count, dim));
 
             // Find gradients relative to each tensor in "tensor", and pass it downstream:
             for (int i = 0; i < tensors.Count; i++)
@@ -1191,9 +1188,9 @@ public class Tensor
                 if (tensors[i].RequiresGrad)
                 {
                     // For every tensor that generated the output, get gradients relative to that part of "dz": 
-                    dim = dz[i];
+                    var di = dz.IndexRow(i);
 
-                    tensors[i].Backward(dim, z);
+                    tensors[i].Backward(di, z);
                 }
             }
         }
@@ -1219,10 +1216,15 @@ public class Tensor
                 }
             }
 
-            IntermediateArray data;
+            IntermediateArray[] temp = new IntermediateArray[tensors.Count];
+
+            for (int i = 0; i < tensors.Count; i++)
+            {
+                temp[i] = tensors[i].Data;
+            }
 
             // Get new Tensor's data:
-            data = np.stack(tensors, axis: dim);
+            IntermediateArray data = IntermediateArray.Stack(temp, axis: dim);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new StackClass());
@@ -1241,12 +1243,12 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             List<Tensor> tensors = Cache;
             int? dim = cacheExtension;
 
-            dz = np.split(dz, tensors.Count, dim);
+            var dz2 = dz.Split(tensors.Count, axis: (int)dim);
 
             // Find gradients relative to each tensor in "tensor", and pass it downstream:
             for (int i = 0; i < tensors.Count; i++)
@@ -1254,9 +1256,9 @@ public class Tensor
                 if (tensors[i].RequiresGrad)
                 {
                     // For every tensor that generated the output, get gradients relative to that part of "dz": 
-                    dim = dz[i].reshape(tensors[i].Data.Shape);
+                    IntermediateArray di = dz2[i].IndexRow(i).Reshape(tensors[i].Data.Shape);
 
-                    tensors[i].Backward(dim, z);
+                    tensors[i].Backward(di, z);
                 }
             }
         }
@@ -1269,12 +1271,12 @@ public class Tensor
 
         public dynamic? cacheExtension;
 
-        public Tensor Forward(Tensor tensorA, dynamic condition, float value) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        public Tensor Forward(Tensor tensorA, IntermediateArray condition, float value) // !!!!!!!!!!!!!!!!!!!!!!!!!!!!
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            IntermediateArray data = np.where(condition, tensorA.Data, value);
+            IntermediateArray data = IntermediateArray.Where(condition, tensorA.Data, value);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MaskedFillClass());
@@ -1288,7 +1290,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             dynamic? condition = cacheExtension;
@@ -1297,7 +1299,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Because some activations are just set to a value, this operation is not differentiable.
-                Tensor da = np.where(condition, dz, 0);
+                IntermediateArray da = IntermediateArray.Where(condition, dz, 0);
 
                 a.Backward(da, z);
             }
@@ -1316,7 +1318,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            IntermediateArray data = tensorA.Data[index];
+            IntermediateArray data = tensorA.Data.IndexRow(index);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SliceClass());
@@ -1330,7 +1332,7 @@ public class Tensor
             return z;
         }
 
-        public void Backward(Tensor dz, Tensor z)
+        public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
             int index = cacheExtension;
@@ -1339,8 +1341,8 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // Add upstream gradients to [index] part of da.
-                Tensor da = new Tensor(a.Data.Zeros());
-                da[index] = dz;
+                IntermediateArray da = a.Data.ZerosLike();
+                da.SetIndex(index, dz);
 
                 a.Backward(da, z);
             }
