@@ -41,7 +41,7 @@ public class RandomNeuron
         return u * multiplier; // standard normal (mean=0, std=1)
     }
 
-    public static IntermediateArray CreateRandomNeurons(int x, bool useSeed, int seed = 0)
+    public static Tensor CreateRandomNeurons(int x, bool useSeed, int seed = 0)
     {
         RandomNeuron rng = useSeed ? new RandomNeuron(seed) : new RandomNeuron();
         float[] output = new float[x];
@@ -51,7 +51,7 @@ public class RandomNeuron
             output[i] = rng.NextStandardNormal();
         }
 
-        return new IntermediateArray(output);
+        return new Tensor(output);
     }
 
     public static Tensor CreateRandomNeurons(int x, int y, bool useSeed, int seed = 0)

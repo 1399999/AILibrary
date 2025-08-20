@@ -85,39 +85,6 @@ public class Tensor
         }
     }
 
-    public static Tensor Ones(int[] shape)
-    {
-        int expandedShape = 0;
-
-        for (int i = 0; i < shape.Length; i++)
-        {
-            expandedShape *= shape[i];
-        }
-
-        float[] data = new float[expandedShape];
-
-        for (int i = 0; i < expandedShape; i++)
-        {
-            data[i] = 1;
-        }
-
-        return new Tensor(new IntermediateArray(data, shape));
-    }
-
-    public static Tensor Zeros(int[] shape)
-    {
-        int expandedShape = 0;
-
-        for (int i = 0; i < shape.Length; i++)
-        {
-            expandedShape *= shape[i];
-        }
-
-        float[] data = new float[expandedShape];
-
-        return new Tensor(new IntermediateArray(data, shape));
-    }
-
     /// <summary>
     /// Reset the Tensor's gradients to zero.
     /// </summary>
@@ -170,15 +137,10 @@ public class Tensor
     /// <returns></returns>
     public static Tensor operator -(Tensor self, Tensor other) => self + other * -1;
     public static Tensor operator -(Tensor self, float other) => self + new Tensor(other) * -1;
-    public static Tensor operator -(int self, Tensor other) 
+    public static Tensor operator -(Tensor other) 
     {
-        if (self == 0)
-        {
-            dynamic op = new NegClass();
-            return op.Forward(other);
-        }
-
-        throw new ArgumentException();
+        dynamic op = new NegClass();
+        return op.Forward(other);
     }
 
     /// <summary>
@@ -277,7 +239,7 @@ public class Tensor
     /// <param name="dim">Dimention to be summed across.</param>
     /// <param name="keepDims">Whether to broadcast result to same shape as input.</param>
     /// <returns>Returns the sum of all values across the "dim" dimention. </returns>
-    public Tensor GetSum(int dim = -1, bool keepDims = false)
+    public Tensor Sum(int dim = -1, bool keepDims = false)
     {
         dynamic op = new SumClass();
         return op.Forward(this, dim, keepDims: keepDims);
@@ -340,6 +302,18 @@ public class Tensor
         dynamic op = new MaskedFillClass();
         return op.Forward(this, condition, value);
     }
+
+    /// <summary>
+    /// Returns the exponentiated Tensor.
+    /// </summary>
+    /// <returns>Returns the exponentiated Tensor.</returns>
+    public Tensor Exp() => new ExpClass().Forward(this);
+
+    /// <summary>
+    /// Returns the log Tensor.
+    /// </summary>
+    /// <returns>Returns the exponentiated Tensor.</returns>
+    public Tensor Log() => new LogClass().Forward(this);
 
     private class AddClass()
     {

@@ -60,25 +60,18 @@ public static class TrainedAIWordGenerator
         var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, int.MaxValue); // W2
         var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, int.MaxValue); // b2 
 
-        //long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
-        //Console.WriteLine(paramaters);
+        long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
+        Console.WriteLine(paramaters);
 
-        //var emb = blockSizeWords.MatrixIndexInto(neuralNet);
-        //var kiloList = emb.Flatten3DTo2DArrayZToY();
-        //var megaList = kiloList.MatrixMultiply(weights1);
-        //var gigaList = megaList.OffsetArray(biases1);
-        //var tanhList = gigaList.GetTanh(); // h
+        var emb = blockSizeWords.IndexInto(neuralNet);
+        var kiloList = emb.Reshape([-1, 6]);
+        var megaList = kiloList.Matmul(weights1);
+        var gigaList = megaList + biases1;
+        var tanhList = gigaList.Tanh(); // h
 
-        //var logits = tanhList.MatrixMultiply(weights2).OffsetArray(biases2);
-        //float loss = logits.CrossEntropy(allWords);
+        var logits = tanhList.Matmul(weights2) + biases2;
+        float loss = logits.CrossEntropy(allWords).Data[0];
 
-        ////loss.BackwardPropagate();
-
-        //for (int i = 0; i < paramaters; i++)
-        //{
-
-        //}
-
-        //Console.WriteLine(loss);
+        Console.WriteLine(loss);
     }
 }
