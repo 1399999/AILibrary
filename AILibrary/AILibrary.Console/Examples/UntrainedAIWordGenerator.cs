@@ -21,42 +21,42 @@ public static class UntrainedAIWordGenerator
         }
 
         int[] allWords = allWordsTemp.ToArray(); // Y, Dimensions: <all words>
-        //Tensor blockSizeWords = Tensor.Zeros(new int[] { allWords.Length, blockSize }); // X, Dimensions: <all words>x<block size>
+        int[][] blockSizeWords = new int[allWords.Length][]; // X, Dimensions: <all words>x<block size>
 
-        //// Building the dataset
+        // Building the dataset
 
-        //int l = 0;
+        int l = 0;
 
-        //for (int i = 0; i < words.Length && i < 5; i++)
-        //{
-        //    Console.WriteLine(words[i]);
+        for (int i = 0; i < words.Length && i < 5; i++)
+        {
+            Console.WriteLine(words[i]);
 
-        //    string word = string.Empty;
+            string word = string.Empty;
 
-        //    for (int j = 0; j < blockSize; j++)
-        //    {
-        //        word += SystemModel.Alphabet[0];
-        //    }
+            for (int j = 0; j < blockSize; j++)
+            {
+                word += SystemModel.Alphabet[0];
+            }
 
-        //    word += words[i];
-        //    word += SystemModel.Alphabet[0];
+            word += words[i];
+            word += SystemModel.Alphabet[0];
 
-        //    for (int j = 0; j < words[i].Length + 1; j++, l++)
-        //    {
-        //        blockSizeWords[l] = new int[blockSize];
+            for (int j = 0; j < words[i].Length + 1; j++, l++)
+            {
+                blockSizeWords[l] = new int[blockSize];
 
-        //        for (int k = 0; k < blockSize; k++)
-        //        {
-        //            Console.Write(word[j + k]);
-        //            blockSizeWords[l][k] = SystemModel.AlphabetNumbers[word[j + k]];
-        //        }
+                for (int k = 0; k < blockSize; k++)
+                {
+                    Console.Write(word[j + k]);
+                    blockSizeWords[l][k] = SystemModel.AlphabetNumbers[word[j + k]];
+                }
 
-        //        Console.Write(" ---> ");
-        //        Console.WriteLine(word[j + blockSize]);
-        //    }
-        //}
+                Console.Write(" ---> ");
+                Console.WriteLine(word[j + blockSize]);
+            }
+        }
 
-        //Tensor nueralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, false); // C
+        //float[][] nueralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, false); // C
 
         //var emb = blockSizeWords.MatrixIndexInto(nueralNet);
 

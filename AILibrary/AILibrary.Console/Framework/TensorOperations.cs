@@ -21,19 +21,7 @@ public class Tensor
         }
     }
 
-    public Tensor(float[] data, bool requiresGrad = true, dynamic? operation = null)
-    {
-        Data = new IntermediateArray(data, new int[] { data.Length });
-        CtorCommon(requiresGrad, operation);
-    }
-
-    public Tensor(float[][] data, bool requiresGrad = true, dynamic? operation = null)
-    {
-        Data = new IntermediateArray(data);
-        CtorCommon(requiresGrad, operation);
-    }
-
-    public Tensor(float[][][] data, bool requiresGrad = true, dynamic? operation = null)
+    public Tensor(object data, bool requiresGrad = true, dynamic? operation = null)
     {
         Data = new IntermediateArray(data);
         CtorCommon(requiresGrad, operation);
