@@ -1,6 +1,4 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace AILibrary.Framework;
+﻿namespace AILibrary.Framework;
 
 public class Tensor
 {
@@ -11,7 +9,7 @@ public class Tensor
     public int[] Shape { get; private set; }
     public IntermediateArray? Grad { get; private set; }
 
-    public Tensor(float data, bool requiresGrad = false, dynamic? operation = null)
+    public Tensor(float data, bool requiresGrad = true, dynamic? operation = null)
     {
         Data = new IntermediateArray(new float[] { data }, new int[] { 1 });
         CtorCommon(requiresGrad, operation);
@@ -23,25 +21,25 @@ public class Tensor
         }
     }
 
-    public Tensor(float[] data, bool requiresGrad = false, dynamic? operation = null)
+    public Tensor(float[] data, bool requiresGrad = true, dynamic? operation = null)
     {
         Data = new IntermediateArray(data, new int[] { data.Length });
         CtorCommon(requiresGrad, operation);
     }
 
-    public Tensor(float[][] data, bool requiresGrad = false, dynamic? operation = null)
+    public Tensor(float[][] data, bool requiresGrad = true, dynamic? operation = null)
     {
         Data = new IntermediateArray(data);
         CtorCommon(requiresGrad, operation);
     }
 
-    public Tensor(float[][][] data, bool requiresGrad = false, dynamic? operation = null)
+    public Tensor(float[][][] data, bool requiresGrad = true, dynamic? operation = null)
     {
         Data = new IntermediateArray(data);
         CtorCommon(requiresGrad, operation);
     }
 
-    public Tensor(IntermediateArray data, bool requiresGrad = false, dynamic? operation = null)
+    public Tensor(IntermediateArray data, bool requiresGrad = true, dynamic? operation = null)
     {
         Data = data;
         CtorCommon(requiresGrad, operation);
@@ -99,14 +97,37 @@ public class Tensor
         }
     }
 
-    public void ToList()
+    public static Tensor Ones(int[] shape)
     {
-        throw new NotImplementedException();
+        int expandedShape = 0;
+
+        for (int i = 0; i < shape.Length; i++)
+        {
+            expandedShape *= shape[i];
+        }
+
+        float[] data = new float[expandedShape];
+
+        for (int i = 0; i < expandedShape; i++)
+        {
+            data[i] = 1;
+        }
+
+        return new Tensor(new IntermediateArray(data, shape));
     }
 
-    public void ToArray()
+    public static Tensor Zeros(int[] shape)
     {
-        throw new NotImplementedException();
+        int expandedShape = 0;
+
+        for (int i = 0; i < shape.Length; i++)
+        {
+            expandedShape *= shape[i];
+        }
+
+        float[] data = new float[expandedShape];
+
+        return new Tensor(new IntermediateArray(data, shape));
     }
 
     /// <summary>

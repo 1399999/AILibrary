@@ -1,7 +1,4 @@
-﻿using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace AILibrary.Framework;
+﻿namespace AILibrary.Framework;
 
 public class IntermediateArray
 {
