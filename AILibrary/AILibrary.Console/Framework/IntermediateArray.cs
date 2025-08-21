@@ -1,4 +1,6 @@
-﻿namespace AILibrary.Framework;
+﻿using System;
+
+namespace AILibrary.Framework;
 
 public class IntermediateArray
 {
@@ -52,16 +54,23 @@ public class IntermediateArray
     }
 
     // Helper: compute flat index
-    private int GetFlatIndex(int[] indices)
+    private int GetFlatIndex(int[] indexes)
     {
-        int flatIndex = 0;
-        int stride = 1;
-        for (int i = Shape.Length - 1; i >= 0; i--)
+        List<int> grandIndexes = new();
+
+        for (int i = 0; i < indexes.Length - 1; i++)
         {
-            flatIndex += indices[i] * stride;
-            stride *= Shape[i];
+            grandIndexes.Add(indexes[i]);
+
+            int j = i + 1;
+
+            for (int k = 0; k < Shape.Length - j; k++)
+            {
+                grandIndexes[i] *= Shape[j + k];
+            }
         }
-        return flatIndex;
+
+        return grandIndexes.Sum() + indexes[^1];
     }
 
     public float this[params int[] indices]
@@ -99,70 +108,6 @@ public class IntermediateArray
         }
     }
 
-    public IntermediateArray Sum(int dim = 0, int[]? axes = null, bool keepdims = false)
-    {
-        if (axes == null || axes.Length == 0)
-        {
-            // Sum all elements.
-            float total = InternalData.Sum();
-            return new IntermediateArray(new float[] { total }, keepdims ? new int[Shape.Length] : new int[0]);
-        }
-
-        axes = axes.Distinct().OrderBy(a => a).ToArray();
-
-        int[] resultShape = Shape.ToArray();
-        foreach (int axis in axes)
-        {
-            if (axis < 0 || axis >= Shape.Length)
-                throw new ArgumentException($"Invalid axis {axis} for shape {string.Join(",", Shape)}");
-            resultShape[axis] = 1;
-        }
-        if (!keepdims)
-            resultShape = resultShape.Where((_, i) => !axes.Contains(i)).ToArray();
-
-        // Allocate result
-        int resultSize = resultShape.Length == 0 ? 1 : resultShape.Aggregate(1, (a, b) => a * b);
-        float[] resultData = new float[resultSize];
-
-        // Iterate over all indices of original array
-        int[] indices = new int[Shape.Length];
-        void Recurse(int dim, int flatResultIndex, int[] resultIndices)
-        {
-            if (dim == Shape.Length)
-            {
-                resultData[flatResultIndex] += this[indices];
-                return;
-            }
-
-            for (int i = 0; i < Shape[dim]; i++)
-            {
-                indices[dim] = i;
-
-                int nextResultIndex = flatResultIndex;
-                int[] nextResultIndices = (int[])resultIndices.Clone();
-
-                if (!axes.Contains(dim))
-                {
-                    int stride = 1;
-                    for (int d = resultShape.Length - 1; d > 0; d--)
-                        stride *= resultShape[d];
-
-                    int idx = 0;
-                    for (int j = 0; j < nextResultIndices.Length; j++)
-                        idx = idx * resultShape[j] + nextResultIndices[j];
-
-                    nextResultIndex = idx;
-                }
-
-                Recurse(dim + 1, nextResultIndex, nextResultIndices);
-            }
-        }
-
-        Recurse(dim, 0, new int[resultShape.Length]);
-
-        return new IntermediateArray(resultData, resultShape);
-    }
-
     public IntermediateArray ZerosLike()
     {
         int size = Shape.Aggregate(1, (a, b) => a * b);
@@ -189,7 +134,9 @@ public class IntermediateArray
     public static IntermediateArray operator +(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
-            throw new ArgumentException("Shapes must match for elementwise addition (broadcasting not implemented).");
+        {
+            (a, b) = a.Broadcast(b);
+        }
 
         float[] resultData = new float[a.InternalData.Length];
         for (int i = 0; i < resultData.Length; i++)
@@ -207,7 +154,9 @@ public class IntermediateArray
     public static IntermediateArray operator -(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
-            throw new ArgumentException("Shapes must match for elementwise subtraction (broadcasting not implemented).");
+        {
+            (a, b) = a.Broadcast(b);
+        }
 
         float[] resultData = new float[a.InternalData.Length];
         for (int i = 0; i < resultData.Length; i++)
@@ -318,7 +267,9 @@ public class IntermediateArray
     public static IntermediateArray Multiply(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
-            throw new ArgumentException("Shapes must match for elementwise multiplication (broadcasting not implemented).");
+        {
+            (a, b) = a.Broadcast(b);
+        }
 
         float[] resultData = new float[a.InternalData.Length];
         for (int i = 0; i < resultData.Length; i++)
@@ -338,7 +289,9 @@ public class IntermediateArray
     public static IntermediateArray Divide(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
-            throw new ArgumentException("Shapes must match for elementwise division (broadcasting not implemented).");
+        {
+            (a, b) = a.Broadcast(b);
+        }
 
         float[] resultData = new float[a.InternalData.Length];
         for (int i = 0; i < resultData.Length; i++)
@@ -362,7 +315,9 @@ public class IntermediateArray
     public static IntermediateArray Power(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
-            throw new ArgumentException("Shapes must match for elementwise power (broadcasting not implemented).");
+        {
+            (a, b) = a.Broadcast(b);
+        }
 
         float[] resultData = new float[a.InternalData.Length];
         for (int i = 0; i < resultData.Length; i++)
@@ -1090,46 +1045,6 @@ public class IntermediateArray
     }
 
     /// <summary>
-    /// Returns a slice of the IntermediateArray along the first axis (like arr[index] in NumPy).
-    /// </summary>
-    public IntermediateArray IndexRow(int index)
-    {
-        if (Shape.Length < 1)
-            throw new InvalidOperationException("Cannot index into a scalar IntermediateArray.");
-
-        if (index < 0 || index >= Shape[0])
-            throw new ArgumentOutOfRangeException(nameof(index), "Index out of range.");
-
-        int ndim = Shape.Length;
-
-        // Compute new shape (drop first axis)
-        int[] newShape = Shape.Skip(1).ToArray();
-        if (newShape.Length == 0)
-            newShape = new int[] { 1 }; // special case → return scalar as 1-element IntermediateArray
-
-        // Strides for row-major layout
-        int[] strides = GetStrides(Shape);
-
-        // Extract slice data
-        List<float> sliceData = new List<float>();
-        int[] idx = new int[ndim];
-        for (int flat = 0; flat < InternalData.Length; flat++)
-        {
-            int remainder = flat;
-            for (int d = 0; d < ndim; d++)
-            {
-                idx[d] = remainder / strides[d];
-                remainder %= strides[d];
-            }
-
-            if (idx[0] == index)
-                sliceData.Add(InternalData[flat]);
-        }
-
-        return new IntermediateArray(sliceData.ToArray(), newShape);
-    }
-
-    /// <summary>
     /// NumPy-like stack function. Stacks a sequence of IntermediateArrays along a new axis.
     /// </summary>
     public static IntermediateArray Stack(IntermediateArray[] arrays, int axis = 0)
@@ -1243,73 +1158,217 @@ public class IntermediateArray
     }
 
     /// <summary>
-    /// Sets part of an NDArray at a given index (row replacement for 2D arrays).
-    /// Similar to NumPy: arr[index] = value
+    /// NumPy-like advanced indexing assignment:
+    /// Replaces rows selected by an index NDArray with the given value NDArray.
+    /// Example: arr.SetIndex([0,2], [[10,10,10],[20,20,20]]).
     /// </summary>
-    public void SetIndex(int index, IntermediateArray value)
+    public void SetIndex(IntermediateArray index, IntermediateArray value)
     {
         if (Shape.Length < 2)
             throw new InvalidOperationException("SetIndex currently supports only 2D arrays.");
 
+        if (index.Shape.Length != 1)
+            throw new ArgumentException("Index must be a 1D NDArray of integers.");
+
         int rows = Shape[0];
         int cols = Shape[1];
 
-        if (index < 0 || index >= rows)
-            throw new ArgumentOutOfRangeException(nameof(index), "Index out of bounds.");
+        // Convert index.Data to integer indices
+        int[] indices = index.InternalData.Select(f => (int)f).ToArray();
 
-        if (value.Shape.Length != 1 || value.Shape[0] != cols)
-            throw new ArgumentException("Value must be a 1D array with the same number of columns.");
-
-        // Find the starting offset in the flat Data
-        int start = index * cols;
-
-        for (int i = 0; i < cols; i++)
+        foreach (var i in indices)
         {
-            InternalData[start + i] = value.InternalData[i];
+            if (i < 0 || i >= rows)
+                throw new ArgumentOutOfRangeException(nameof(index), "Index out of bounds.");
+        }
+
+        // Validate value shape
+        if (value.Shape.Length == 1)
+        {
+            // A single row vector: broadcast across all indices
+            if (value.Shape[0] != cols)
+                throw new ArgumentException("1D value must match the number of columns.");
+
+            for (int r = 0; r < indices.Length; r++)
+            {
+                int dstOffset = indices[r] * cols;
+                Array.Copy(value.InternalData, 0, InternalData, dstOffset, cols);
+            }
+        }
+        else if (value.Shape.Length == 2)
+        {
+            // Must match (len(indices), cols)
+            if (value.Shape[0] != indices.Length || value.Shape[1] != cols)
+                throw new ArgumentException("2D value must match (len(index), cols).");
+
+            for (int r = 0; r < indices.Length; r++)
+            {
+                int dstOffset = indices[r] * cols;
+                int srcOffset = r * cols;
+                Array.Copy(value.InternalData, srcOffset, InternalData, dstOffset, cols);
+            }
+        }
+        else
+        {
+            throw new ArgumentException("Value must be a 1D row or 2D array matching the target shape.");
         }
     }
-}
 
-public class OldIntermediateArray
-{
-    public float? DataZeroDimArray { get; set; }
-    public List<float>? DataOneDimArray { get; set; }
-    public List<List<float>>? DataTwoDimArray { get; set; }
-    public List<List<List<float>>>? DataThreeDimArray { get; set; }
-    public int Dimensions { get; set; }
-    public List<int> Shape { get; set; }
-
-    public OldIntermediateArray(object data, int dimensions)
+    /// <summary>
+    /// Returns a slice of the NDArray along the first axis (like arr[index] in NumPy).
+    /// </summary>
+    public IntermediateArray IndexRow(int index)
     {
-        Dimensions = dimensions;
-        Shape = new List<int>();
+        if (Shape.Length < 1)
+            throw new InvalidOperationException("Cannot index into a scalar NDArray.");
 
-        if (dimensions == 0)
+        if (index < 0 || index >= Shape[0])
+            throw new ArgumentOutOfRangeException(nameof(index), "Index out of range.");
+
+        int ndim = Shape.Length;
+
+        // Compute new shape (drop first axis)
+        int[] newShape = Shape.Skip(1).ToArray();
+        if (newShape.Length == 0)
+            newShape = new int[] { 1 }; // special case → return scalar as 1-element NDArray
+
+        // Strides for row-major layout
+        int[] strides = GetStrides(Shape);
+
+        // Extract slice data
+        List<float> sliceData = new List<float>();
+        int[] idx = new int[ndim];
+        for (int flat = 0; flat < InternalData.Length; flat++)
         {
-            DataZeroDimArray = (float)data;
+            int remainder = flat;
+            for (int d = 0; d < ndim; d++)
+            {
+                idx[d] = remainder / strides[d];
+                remainder %= strides[d];
+            }
 
+            if (idx[0] == index)
+                sliceData.Add(InternalData[flat]);
         }
 
-        else if (dimensions == 1)
+        return new IntermediateArray(sliceData.ToArray(), newShape);
+    }
+
+    /// <summary>
+    /// Returns a slice of the IntermediateArray along the first axis (like arr[index] in NumPy).
+    /// </summary>
+    public IntermediateArray IndexRow(IntermediateArray values)
+    {
+        if (this.Shape.Length == values.Shape.Length)
         {
-            DataOneDimArray = (List<float>)data;
-            Shape.Add(DataOneDimArray.Count);
+            float[][][] output = new float[this.Shape[0]][][];
+
+            for (int i = 0; i < this.Shape[0]; i++)
+            {
+                output[i] = new float[this.Shape[1]][];
+
+                for (int j = 0; j < this.Shape[1]; j++)
+                {
+                    output[i][j] = new float[values.Shape[1]];
+                }
+            }
+
+            for (int i = 0; i < this.Shape[0]; i++)
+            {
+                if (i >= values.Shape[0])
+                {
+                    break;
+                }
+
+                for (int j = 0; j < this.Shape[1]; j++)
+                {
+                    for (int k = 0; k < values.Shape[1]; k++)
+                    {
+                        output[i][j][k] = values.InternalData[(((int)this.InternalData[(i * Shape[1]) + j]) * values.Shape[1]) + k];
+                    }
+                }
+            }
+
+            return new IntermediateArray(output);
         }
 
-        else if (dimensions == 2)
-        {
-            DataTwoDimArray = (List<List<float>>)data;
-            Shape.Add(DataTwoDimArray.Count);
-            Shape.Add(DataTwoDimArray[0].Count);
+        throw new NotImplementedException();
+    }
 
+    /// <summary>
+    /// NumPy-like sum along an axis.
+    /// axis = -1 → sum over all elements.
+    /// keepdims = true → keep reduced axis as length 1.
+    /// keepdims = false → drop reduced axis.
+    /// </summary>
+    public IntermediateArray Sum(int dim = -1, bool keepdims = false)
+    {
+        if (dim < -1 || dim >= Shape.Length)
+            throw new ArgumentException("Invalid axis.");
+
+        if (dim == -1)
+        {
+            // Sum over all elements
+            float total = InternalData.Sum();
+            if (keepdims)
+                return new IntermediateArray(new float[] { total }, Enumerable.Repeat(1, Shape.Length).ToArray());
+            else
+                return new IntermediateArray(new float[] { total }, new int[] { });
         }
 
-        else if (dimensions == 3)
+        // Axis-specific reduction
+        int axisSize = Shape[dim];
+        int outer = Shape.Take(dim).Aggregate(1, (a, b) => a * b);
+        int inner = Shape.Skip(dim + 1).Aggregate(1, (a, b) => a * b);
+
+        int[] newShape;
+        if (keepdims)
         {
-            DataThreeDimArray = (List<List<List<float>>>)data;
-            Shape.Add(DataThreeDimArray.Count);
-            Shape.Add(DataThreeDimArray[0].Count);
-            Shape.Add(DataThreeDimArray[0][0].Count);
+            newShape = Shape.ToArray();
+            newShape[dim] = 1;
         }
+        else
+        {
+            newShape = Shape.Where((_, i) => i != dim).ToArray();
+        }
+
+        float[] result = new float[outer * inner];
+
+        for (int o = 0; o < outer; o++)
+        {
+            for (int i = 0; i < inner; i++)
+            {
+                float sum = 0;
+                for (int a = 0; a < axisSize; a++)
+                {
+                    int idx = o * axisSize * inner + a * inner + i;
+                    sum += InternalData[idx];
+                }
+                result[o * inner + i] = sum;
+            }
+        }
+
+        return new IntermediateArray(result, newShape);
+    }
+
+    // Exmaples: Index[2, 5] = InternalData[(2 * 27) + (5 * 1)], the list is: [32, 27]
+    // Examples: Index[2, 7, 8] = InternalData[(2 * 27 * 22) + (7 * 22) + (8 * 1)], the list is: [32, 27, 22]
+    public float Index(int[] indexes)
+    {
+        List<int> grandIndexes = new();
+
+        for (int i = 0; i < indexes.Length - 1; i++)
+        {
+            grandIndexes.Add(indexes[i]);
+
+            int j = i + 1;
+
+            for (int k = 0; k < Shape.Length - j; k++)
+            {
+                grandIndexes[i] *= Shape[j + k];
+            }
+        }
+
+        return InternalData[grandIndexes.Sum() + indexes[^1]];
     }
 }

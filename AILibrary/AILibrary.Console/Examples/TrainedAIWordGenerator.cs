@@ -63,14 +63,14 @@ public static class TrainedAIWordGenerator
         long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
         Console.WriteLine(paramaters);
 
-        var emb = blockSizeWords.IndexInto(neuralNet);
+        var emb = blockSizeWords.IndexInto(neuralNet.Data);
         var kiloList = emb.Reshape([-1, 6]);
         var megaList = kiloList.Matmul(weights1);
         var gigaList = megaList + biases1;
         var tanhList = gigaList.Tanh(); // h
 
         var logits = tanhList.Matmul(weights2) + biases2;
-        float loss = logits.CrossEntropy(allWords).Data[0];
+        float loss = logits.CrossEntropy(allWords.Data).Data[0];
 
         Console.WriteLine(loss);
     }

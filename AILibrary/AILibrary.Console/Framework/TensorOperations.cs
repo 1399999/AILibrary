@@ -119,8 +119,7 @@ public class Tensor
     /// <returns></returns>
     public static Tensor operator +(Tensor self, Tensor other)
     {
-        dynamic op = new AddClass();
-        return op.Forward(self, other);
+        return new AddClass().Forward(self, other);
     }
 
     public static Tensor operator +(Tensor self, float other)
@@ -135,8 +134,8 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public static Tensor operator -(Tensor self, Tensor other) => self + other * -1;
-    public static Tensor operator -(Tensor self, float other) => self + new Tensor(other) * -1;
+    public static Tensor operator -(Tensor self, Tensor other) => self + new Tensor((-1F).Value(self.Shape));
+    public static Tensor operator -(Tensor self, float other) => self + new Tensor(other) * new Tensor((-1F).Value(self.Shape));
     public static Tensor operator -(Tensor other) 
     {
         dynamic op = new NegClass();
@@ -199,8 +198,7 @@ public class Tensor
     /// <returns></returns>
     public static Tensor operator /(Tensor self, Tensor other)
     {
-        dynamic op = new DivClass();
-        return op.Forward(self, other);
+        return new DivClass().Forward(self, other);
     }
 
     public static Tensor operator /(Tensor self, float other)
@@ -215,10 +213,9 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public Tensor IndexInto(Tensor index)
+    public Tensor IndexInto(IntermediateArray index)
     {
-        dynamic op = new SliceClass();
-        return op.Forward(this, index);
+        return new SliceClass().Forward(this, index);
     }
 
     /// <summary>
@@ -241,8 +238,7 @@ public class Tensor
     /// <returns>Returns the sum of all values across the "dim" dimention. </returns>
     public Tensor Sum(int dim = -1, bool keepDims = false)
     {
-        dynamic op = new SumClass();
-        return op.Forward(this, dim, keepDims: keepDims);
+        return new SumClass().Forward(this, dim, keepdims: keepDims);
     }
 
     /// <summary>
@@ -639,7 +635,7 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++) 
                 {
-                    da = da.Sum(axes: new int[] { 0 });
+                    da = da.Sum(dim: 0);
                 }
 
                 for (int n = 0; n < tensorA.Shape.Length; n++)
@@ -852,7 +848,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.Sum(axes: new int[1] { dim }, keepdims: keepdims);
+            var data = tensorA.Data.Sum(dim: dim, keepdims: keepdims);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SumClass());
@@ -1294,9 +1290,9 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public int cacheExtension = 0;
+        public IntermediateArray? cacheExtension;
 
-        public Tensor Forward(Tensor tensorA, int index)
+        public Tensor Forward(Tensor tensorA, IntermediateArray index)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
@@ -1318,7 +1314,7 @@ public class Tensor
         public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            int index = cacheExtension;
+            IntermediateArray index = cacheExtension;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)
