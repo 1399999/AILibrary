@@ -132,7 +132,7 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public static Tensor operator -(Tensor self, Tensor other) => self + new Tensor((-1F).Value(self.Shape));
+    public static Tensor operator -(Tensor self, Tensor other) => self + (new Tensor((-1F).Value(self.Shape)) * other);
     public static Tensor operator -(Tensor self, float other) => self + new Tensor(other) * new Tensor((-1F).Value(self.Shape));
     public static Tensor operator -(Tensor other) => new NegClass().Forward(other);
 

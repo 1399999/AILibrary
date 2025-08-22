@@ -80,11 +80,11 @@ public static class TensorUtilities
     {
         var negTensor = -tensor;
 
-        var c = tensor.Exp();
-        var d = negTensor.Exp();
+        var expx = tensor.Exp();
+        var negexpx = negTensor.Exp();
 
-        var a = c - d;
-        var b = c + d;
+        var a = expx - negexpx;
+        var b = expx + negexpx;
 
         return a / b;
     }
@@ -169,7 +169,7 @@ public static class TensorUtilities
 
         for (int i = 0; i < expandedShape; i++)
         {
-            data[i] = 1;
+            data[i] = value;
         }
 
         return new IntermediateArray(data, shape);

@@ -69,10 +69,10 @@ public static class TrainedAIWordGenerator
         var gigaList = megaList + biases1;
         var tanhList = gigaList.Tanh(); // h
 
-        var logits = tanhList.Matmul(weights2) + biases2;
+        var tempLogits = tanhList.Matmul(weights2);
+        var logits = tempLogits + biases2;
         float loss = logits.CrossEntropy(allWords.Data).Data[0];
 
         Console.WriteLine(loss);
-        Console.WriteLine(logits);
     }
 }
