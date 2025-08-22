@@ -1,4 +1,6 @@
-﻿namespace AILibrary.Framework;
+﻿using System.Formats.Asn1;
+
+namespace AILibrary.Framework;
 
 public class Tensor
 {
@@ -47,11 +49,11 @@ public class Tensor
 
     public override string ToString()
     {
-        return $"({Data}, requires_grad = {RequiresGrad})";
+        return $"Tensor(Shape: ({Shape.ListToString()}))";
     }
 
     /// <summary>
-    /// Performs the backpropagation with gradient descent from current tensor. Will fill every tensor's "grad" attribute with gradients relative to "self" (current Tensor).
+    /// Performs the backpropagation with gradient descent from current tensor. Will fill every tensor's "grad" attribute with gradients relative to the current Tensor.
     /// </summary>
     /// <param name="grad"></param>
     /// <param name="z"></param>
@@ -117,15 +119,11 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public static Tensor operator +(Tensor self, Tensor other)
-    {
-        return new AddClass().Forward(self, other);
-    }
+    public static Tensor operator +(Tensor self, Tensor other) => new AddClass().Forward(self, other);
 
     public static Tensor operator +(Tensor self, float other)
     {
-        dynamic op = new AddClass();
-        return op.Forward(self, new Tensor(other));
+        return new AddClass().Forward(self, new Tensor(other));
     }
 
     /// <summary>
@@ -136,11 +134,7 @@ public class Tensor
     /// <returns></returns>
     public static Tensor operator -(Tensor self, Tensor other) => self + new Tensor((-1F).Value(self.Shape));
     public static Tensor operator -(Tensor self, float other) => self + new Tensor(other) * new Tensor((-1F).Value(self.Shape));
-    public static Tensor operator -(Tensor other) 
-    {
-        dynamic op = new NegClass();
-        return op.Forward(other);
-    }
+    public static Tensor operator -(Tensor other) => new NegClass().Forward(other);
 
     /// <summary>
     /// New = self * other
@@ -148,17 +142,8 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public static Tensor operator *(Tensor self, Tensor other)
-    {
-        dynamic op = new MulClass();
-        return op.Forward(self, other);
-    }
-
-    public static Tensor operator *(Tensor self, float other)
-    {
-        dynamic op = new MulClass();
-        return op.Forward(self, new Tensor(other));
-    }
+    public static Tensor operator *(Tensor self, Tensor other) => new MulClass().Forward(self, other);
+    public static Tensor operator *(Tensor self, float other) => new MulClass().Forward(self, new Tensor(other));
 
     /// <summary>
     /// New = self ^ other
@@ -166,17 +151,8 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public static Tensor operator ^(Tensor self, float other)
-    {
-        dynamic op = new PowClass();
-        return op.Forward(self, new Tensor(other));
-    }
-
-    public static Tensor operator ^(Tensor self, Tensor other)
-    {
-        dynamic op = new PowClass();
-        return op.Forward(self, other);
-    }
+    public static Tensor operator ^(Tensor self, float other) => new PowClass().Forward(self, new Tensor(other));
+    public static Tensor operator ^(Tensor self, Tensor other) => new PowClass().Forward(self, other);
 
     /// <summary>
     /// New = self @ other
@@ -184,11 +160,7 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public Tensor Matmul(Tensor other)
-    {
-        dynamic op = new MatMulClass();
-        return op.Forward(this, other);
-    }
+    public Tensor Matmul(Tensor other) => new MatMulClass().Forward(this, other);
 
     /// <summary>
     /// New = self @ other
@@ -196,16 +168,8 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public static Tensor operator /(Tensor self, Tensor other)
-    {
-        return new DivClass().Forward(self, other);
-    }
-
-    public static Tensor operator /(Tensor self, float other)
-    {
-        dynamic op = new DivClass();
-        return op.Forward(self, other);
-    }
+    public static Tensor operator /(Tensor self, Tensor other) => new DivClass().Forward(self, other);
+    public static Tensor operator /(Tensor self, float other) => new DivClass().Forward(self, new Tensor(other));
 
     /// <summary>
     /// New = self[index]
@@ -213,10 +177,7 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public Tensor IndexInto(IntermediateArray index)
-    {
-        return new SliceClass().Forward(this, index);
-    }
+    public Tensor IndexInto(IntermediateArray index) => new SliceClass().Forward(this, index);
 
     /// <summary>
     /// Returns the largest values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -224,11 +185,7 @@ public class Tensor
     /// <param name="dim">Dimention to be reduced (only largest remains).</param>
     /// <param name="keepDims">Whether to broadcast result to same shape as input.</param>
     /// <returns></returns>
-    public Tensor GetMax(int dim = -1, bool keepDims = false)
-    {
-        dynamic op = new MaxClass();
-        return op.Forward(this, dim, keepDims: keepDims);
-    }
+    public Tensor GetMax(int dim = -1, bool keepdims = false) => new MaxClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the sum of all values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -236,10 +193,7 @@ public class Tensor
     /// <param name="dim">Dimention to be summed across.</param>
     /// <param name="keepDims">Whether to broadcast result to same shape as input.</param>
     /// <returns>Returns the sum of all values across the "dim" dimention. </returns>
-    public Tensor Sum(int dim = -1, bool keepDims = false)
-    {
-        return new SumClass().Forward(this, dim, keepdims: keepDims);
-    }
+    public Tensor Sum(int dim = -1, bool keepdims = false) => new SumClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the mean of all values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -247,11 +201,7 @@ public class Tensor
     /// <param name="dim">Dimention to be averaged across.</param>
     /// <param name="keepDims">Wether to broadcast result to same shape as input.</param>
     /// <returns>Returns the mean of all values across the "dim" dimention.</returns>
-    public Tensor GetMean(int dim = -1, bool keepDims = false)
-    {
-        dynamic op = new MeanClass();
-        return op.Forward(this, dim, keepDims: keepDims);
-    }
+    public Tensor GetMean(int dim = -1, bool keepdims = false) => new MeanClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the variance of all values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -259,33 +209,21 @@ public class Tensor
     /// <param name="dim">Dimention the variance will be computed across</param>
     /// <param name="keepDims">Wether to broadcast result to same shape as input.</param>
     /// <returns>Returns the variance of all values across the "dim" dimention.</returns>
-    public Tensor Var(int dim = -1, bool keepDims = false)
-    {
-        dynamic op = new VarClass();
-        return op.Forward(this, dim, keepDims: keepDims);
-    }
+    public Tensor Var(int dim = -1, bool keepdims = false) => new VarClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the original tensor reshaped to the new shape given. Example: (16, 8, 4), *shape =(2, 32, 8) -> (2, 32, 8).
     /// </summary>
     /// <param name="shape">Dimention the variance will be computed across.</param>
     /// <returns>Returns the original tensor reshaped to the new shape given.</returns>
-    public Tensor Reshape(int[] shape)
-    {
-        dynamic op = new ReshapeClass();
-        return op.Forward(this, shape);
-    }
+    public Tensor Reshape(int[] shape) => new ReshapeClass().Forward(this, shape);
 
     /// <summary>
     /// Returns the original tensor with the two given dimentions transposed. Example: (16, 8, 4), *dims=(-2,-1) -> (16, 4, 8).
     /// </summary>
     /// <param name="dims">Two dimentions to be transposed.</param>
     /// <returns>Returns the original tensor with the two given dimentions transposed.</returns>
-    public Tensor Transpose(int axis1, int axis2)
-    {
-        dynamic op = new TransposeClass();
-        return op.Forward(this, axis1, axis2);
-    }
+    public Tensor Transpose(int axis1, int axis2) => new TransposeClass().Forward(this, axis1, axis2);
 
     /// <summary>
     /// Returns the original tensor with the values where condition is True set to "value".
@@ -293,11 +231,7 @@ public class Tensor
     /// <param name="condiditon">Matrix with True and False. Where this is False, will replace original with value.</param>
     /// <param name="value">Value to fill Tensor with, where condition is True.</param>
     /// <returns>Returns the original tensor with the values where condition is True set to "value".</returns>
-    public Tensor MaskedFill(IntermediateArray condition, float value)
-    {
-        dynamic op = new MaskedFillClass();
-        return op.Forward(this, condition, value);
-    }
+    public Tensor MaskedFill(IntermediateArray condition, float value) => new MaskedFillClass().Forward(this, condition, value);
 
     /// <summary>
     /// Returns the exponentiated Tensor.

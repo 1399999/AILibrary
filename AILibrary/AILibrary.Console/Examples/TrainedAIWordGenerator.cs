@@ -73,5 +73,6 @@ public static class TrainedAIWordGenerator
         float loss = logits.CrossEntropy(allWords.Data).Data[0];
 
         Console.WriteLine(loss);
+        Console.WriteLine(logits);
     }
 }

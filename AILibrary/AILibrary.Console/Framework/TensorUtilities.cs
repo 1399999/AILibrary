@@ -91,10 +91,10 @@ public static class TensorUtilities
 
     public static Tensor CrossEntropy(this Tensor logits, IntermediateArray array)
     {
-        logits = logits / logits.Sum(dim: 1, keepDims: true);
+        logits = logits / logits.Sum(dim: 1, keepdims: true);
 
         var counts = logits.Exp();
-        var prob = counts / counts.Sum(1, keepDims: true);
+        var prob = counts / counts.Sum(1, keepdims: true);
 
         prob = -prob;
         var range = ArangeInt(32);
@@ -173,5 +173,29 @@ public static class TensorUtilities
         }
 
         return new IntermediateArray(data, shape);
+    }
+
+    public static string ListToString(this int[] array)
+    {
+        string output = string.Empty;
+
+        for (int i = 0; i < array.Length; i++)
+        {
+            output += array[i] + ", ";
+        }
+
+        return output.Substring(0, output.Length - 2);
+    }
+
+    public static string ListToString(this float[] array)
+    {
+        string output = string.Empty;
+
+        for (int i = 0; i < array.Length; i++)
+        {
+            output += array[i] + ", ";
+        }
+
+        return output.Substring(0, output.Length - 2);
     }
 }

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AILibrary.Framework;
+﻿namespace AILibrary.Framework;
 
 public class IntermediateArray
 {
