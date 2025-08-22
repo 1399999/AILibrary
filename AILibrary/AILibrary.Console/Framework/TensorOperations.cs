@@ -766,7 +766,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/dx(sqrt(a)) = (1/2) * (1/sqrt(a)), apply the chain rule to the derivative of the square root:
-                var da = 1 / 2 * (data.OnesLike() / data) * dz;
+                var da =  ((data.OnesLike() / data) * (1/2)) * dz;
                 a.Backward(da, z);
             }
         }

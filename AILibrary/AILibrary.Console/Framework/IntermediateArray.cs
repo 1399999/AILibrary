@@ -7,14 +7,16 @@ public class IntermediateArray
 
     public IntermediateArray(float[] data, int[] shape)
     {
-        int size = shape.Aggregate(1, (a, b) => a * b);
-        if (size != data.Length)
+        if (MultiplyTotalIndex(shape) != data.Length)
+        {
             throw new ArgumentException("Data length does not match shape.");
+        }
+
         InternalData = data;
         Shape = shape;
     }
 
-    // Generic constructor: accepts any nested float arrays
+    // Generic constructor: Accepts any nested float arrays.
     public IntermediateArray(object array)
     {
         ArgumentNullException.ThrowIfNull(array);
@@ -28,7 +30,6 @@ public class IntermediateArray
         InternalData = flatData.ToArray();
     }
 
-    // Recursive parser
     private static void ParseArray(object array, List<int> shape, List<float> flat, int depth)
     {
         if (array is float f)
@@ -107,30 +108,13 @@ public class IntermediateArray
         }
     }
 
-    public IntermediateArray ZerosLike()
-    {
-        int size = Shape.Aggregate(1, (a, b) => a * b);
-        float[] zeros = new float[size]; // Automatically filled with 0
-        return new IntermediateArray(zeros, Shape.ToArray()); // Copy shape
-    }
+    public IntermediateArray ZerosLike() => new IntermediateArray(new float[MultiplyTotalIndex(Shape)], Shape);
 
-    public IntermediateArray OnesLike()
-    {
-        int size = Shape.Aggregate(1, (a, b) => a * b);
-        float[] zeros = new float[size]; // Automatically filled with 0.
+    public IntermediateArray OnesLike() => Value(1, Shape);
 
-        for (int i = 0; i < zeros.Length; i++)
-        {
-            zeros[i] = 1;
-        }
+    public static IntermediateArray operator +(IntermediateArray a, IntermediateArray b) => Add(a, b);
 
-        return new IntermediateArray(zeros, Shape.ToArray()); // Copy shape
-    }
-
-    /// <summary>
-    /// NumPy-like elementwise addition.
-    /// </summary>
-    public static IntermediateArray operator +(IntermediateArray a, IntermediateArray b)
+    public static IntermediateArray Add(IntermediateArray a, IntermediateArray b) 
     {
         if (!a.Shape.SequenceEqual(b.Shape))
         {
@@ -138,19 +122,18 @@ public class IntermediateArray
         }
 
         float[] resultData = new float[a.InternalData.Length];
+
         for (int i = 0; i < resultData.Length; i++)
+        {
             resultData[i] = a.InternalData[i] + b.InternalData[i];
+        }
 
-        return new IntermediateArray(resultData, a.Shape.ToArray());
+        return new IntermediateArray(resultData, a.Shape);
     }
 
-    // NumPy-like add() function
-    public static IntermediateArray Add(IntermediateArray a, IntermediateArray b) => a + b;
+    public static IntermediateArray operator -(IntermediateArray a, IntermediateArray b) => Subtract(a, b);
 
-    /// <summary>
-    /// NumPy-like elementwise subtraction.
-    /// </summary>
-    public static IntermediateArray operator -(IntermediateArray a, IntermediateArray b)
+    public static IntermediateArray Subtract(IntermediateArray a, IntermediateArray b) 
     {
         if (!a.Shape.SequenceEqual(b.Shape))
         {
@@ -158,13 +141,14 @@ public class IntermediateArray
         }
 
         float[] resultData = new float[a.InternalData.Length];
+
         for (int i = 0; i < resultData.Length; i++)
+        {
             resultData[i] = a.InternalData[i] - b.InternalData[i];
+        }
 
-        return new IntermediateArray(resultData, a.Shape.ToArray());
+        return new IntermediateArray(resultData, a.Shape);
     }
-
-    public static IntermediateArray Subtract(IntermediateArray a, IntermediateArray b) => a - b;
 
     // -------- numpy.prod() implementation --------
     public IntermediateArray Prod(int[]? axes = null, bool keepDims = false)
@@ -240,29 +224,20 @@ public class IntermediateArray
         return new IntermediateArray(resultData, resultShape);
     }
 
-    /// <summary>
-    /// Returns a new NDArray with every element negated.
-    /// </summary>
     public IntermediateArray Negate()
     {
         float[] resultData = new float[InternalData.Length];
-        for (int i = 0; i < InternalData.Length; i++)
+
+        for (int i = 0; i < resultData.Length; i++)
+        {
             resultData[i] = -InternalData[i];
+        }
 
-        return new IntermediateArray(resultData, Shape.ToArray());
+        return new IntermediateArray(resultData, Shape);
     }
 
-    /// <summary>
-    /// Unary minus operator for NDArray (elementwise negation).
-    /// </summary>
-    public static IntermediateArray operator -(IntermediateArray a)
-    {
-        return a.Negate();
-    }
+    public static IntermediateArray operator -(IntermediateArray a) => a.Negate();
 
-    /// <summary>
-    /// NumPy-like elementwise multiplication.
-    /// </summary>
     public static IntermediateArray Multiply(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
@@ -271,20 +246,17 @@ public class IntermediateArray
         }
 
         float[] resultData = new float[a.InternalData.Length];
-        for (int i = 0; i < resultData.Length; i++)
-            resultData[i] = a.InternalData[i] * b.InternalData[i];
 
-        return new IntermediateArray(resultData, a.Shape.ToArray());
+        for (int i = 0; i < resultData.Length; i++)
+        {
+            resultData[i] = a.InternalData[i] * b.InternalData[i];
+        }
+
+        return new IntermediateArray(resultData, a.Shape);
     }
 
-    /// <summary>
-    /// Overload * operator for elementwise multiplication.
-    /// </summary>
     public static IntermediateArray operator *(IntermediateArray a, IntermediateArray b) => Multiply(a, b);
 
-    /// <summary>
-    /// NumPy-like elementwise division.
-    /// </summary>
     public static IntermediateArray Divide(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
@@ -293,24 +265,17 @@ public class IntermediateArray
         }
 
         float[] resultData = new float[a.InternalData.Length];
+
         for (int i = 0; i < resultData.Length; i++)
         {
-            if (b.InternalData[i] == 0)
-                throw new DivideByZeroException("Division by zero encountered in NDArray.");
             resultData[i] = a.InternalData[i] / b.InternalData[i];
         }
 
-        return new IntermediateArray(resultData, a.Shape.ToArray());
+        return new IntermediateArray(resultData, a.Shape);
     }
 
-    /// <summary>
-    /// Overload / operator for elementwise division.
-    /// </summary>
     public static IntermediateArray operator /(IntermediateArray a, IntermediateArray b) => Divide(a, b);
 
-    /// <summary>
-    /// NumPy-like elementwise power.
-    /// </summary>
     public static IntermediateArray Power(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
@@ -319,29 +284,28 @@ public class IntermediateArray
         }
 
         float[] resultData = new float[a.InternalData.Length];
-        for (int i = 0; i < resultData.Length; i++)
-            resultData[i] = (float)Math.Pow(a.InternalData[i], b.InternalData[i]);
 
-        return new IntermediateArray(resultData, a.Shape.ToArray());
+        for (int i = 0; i < resultData.Length; i++)
+        {
+            resultData[i] = (float)Math.Pow(a.InternalData[i], b.InternalData[i]);
+        }
+
+        return new IntermediateArray(resultData, a.Shape);
     }
 
-    /// <summary>
-    /// NumPy-like elementwise power with a scalar exponent.
-    /// </summary>
     public static IntermediateArray Power(IntermediateArray a, float exponent)
     {
         float[] resultData = new float[a.InternalData.Length];
-        for (int i = 0; i < resultData.Length; i++)
-            resultData[i] = (float)Math.Pow(a.InternalData[i], exponent);
 
-        return new IntermediateArray(resultData, a.Shape.ToArray());
+        for (int i = 0; i < resultData.Length; i++)
+        {
+            resultData[i] = (float)Math.Pow(a.InternalData[i], exponent);
+        }
+
+        return new IntermediateArray(resultData, a.Shape);
     }
 
-    /// <summary>
-    /// Overload ^ operator for elementwise power.
-    /// </summary>
     public static IntermediateArray operator ^(IntermediateArray a, IntermediateArray b) => Power(a, b);
-
     public static IntermediateArray operator ^(IntermediateArray a, float exponent) => Power(a, exponent);
 
     /// <summary>
@@ -351,14 +315,18 @@ public class IntermediateArray
     public IntermediateArray Matmul(IntermediateArray b)
     {
         if (Shape.Length != 2 || b.Shape.Length != 2)
+        {
             throw new ArgumentException("Matmul currently only supports 2D arrays.");
+        }
 
         int m = Shape[0]; // rows of A
         int n = Shape[1]; // cols of A = rows of B
         int p = b.Shape[1]; // cols of B
 
         if (n != b.Shape[0])
+        {
             throw new ArgumentException("Shapes are not aligned for matrix multiplication.");
+        }
 
         float[] resultData = new float[m * p];
 
@@ -367,10 +335,12 @@ public class IntermediateArray
             for (int j = 0; j < p; j++)
             {
                 float sum = 0f;
+
                 for (int k = 0; k < n; k++)
                 {
                     sum += InternalData[i * n + k] * b.InternalData[k * p + j];
                 }
+
                 resultData[i * p + j] = sum;
             }
         }
@@ -451,51 +421,51 @@ public class IntermediateArray
     }
 
     /// <summary>
-    /// NumPy-like elementwise exponential function.
+    /// Elementwise exponential function.
     /// Returns a new NDArray where each element is e^x.
     /// </summary>
     public IntermediateArray Exp()
     {
         float[] resultData = new float[InternalData.Length];
-        for (int i = 0; i < InternalData.Length; i++)
+
+        for (int i = 0; i < resultData.Length; i++)
         {
             resultData[i] = (float)Math.Exp(InternalData[i]);
         }
-        return new IntermediateArray(resultData, (int[])Shape.Clone());
+
+        return new IntermediateArray(resultData, Shape);
     }
 
     /// <summary>
-    /// NumPy-like elementwise natural logarithm (ln).
-    /// Returns a new NDArray where each element is log_e(x).
+    /// Elementwise natural logarithm (ln).
+    /// Returns a new IntermediateArray where each element is log_e(x).
     /// </summary>
     public IntermediateArray Log()
     {
         float[] resultData = new float[InternalData.Length];
-        for (int i = 0; i < InternalData.Length; i++)
-        {
-            if (InternalData[i] <= 0)
-                throw new ArgumentException("Log undefined for zero or negative values in IntermediateArray.");
 
+        for (int i = 0; i < resultData.Length; i++)
+        {
             resultData[i] = MathF.Log(InternalData[i]);
         }
-        return new IntermediateArray(resultData, (int[])Shape.Clone());
+
+        return new IntermediateArray(resultData, Shape);
     }
 
     /// <summary>
-    /// NumPy-like elementwise square root.
-    /// Returns a new NDArray where each element is sqrt(x).
+    /// Elementwise square root.
+    /// Returns a new IntermediateArray where each element is sqrt(x).
     /// </summary>
     public IntermediateArray Sqrt()
     {
         float[] resultData = new float[InternalData.Length];
-        for (int i = 0; i < InternalData.Length; i++)
-        {
-            if (InternalData[i] < 0)
-                throw new ArgumentException("Sqrt undefined for negative values in IntermediateArray.");
 
+        for (int i = 0; i < resultData.Length; i++)
+        {
             resultData[i] = MathF.Sqrt(InternalData[i]);
         }
-        return new IntermediateArray(resultData, (int[])Shape.Clone());
+
+        return new IntermediateArray(resultData, Shape);
     }
 
     /// <summary>
@@ -583,40 +553,16 @@ public class IntermediateArray
         }
     }
 
-    /// <summary>
-    /// NumPy-like elementwise division where a scalar (float) 
-    /// is divided by every element in the IntermediateArray.
-    /// Equivalent to np.divide(scalar, array).
-    /// </summary>
-    public static IntermediateArray operator *(float scalar, IntermediateArray array)
-    {
-        float[] resultData = new float[array.InternalData.Length];
-        for (int i = 0; i < array.InternalData.Length; i++)
-        {
-            if (array.InternalData[i] == 0f)
-                throw new DivideByZeroException("Division by zero in IntermediateArray.");
-
-            resultData[i] = scalar * array.InternalData[i];
-        }
-        return new IntermediateArray(resultData, (int[])array.Shape.Clone());
-    }
-
-    /// <summary>
-    /// NumPy-like elementwise division where a scalar (float) 
-    /// is divided by every element in the IntermediateArray.
-    /// Equivalent to np.divide(scalar, array).
-    /// </summary>
     public static IntermediateArray operator *(IntermediateArray array, float scalar)
     {
         float[] resultData = new float[array.InternalData.Length];
-        for (int i = 0; i < array.InternalData.Length; i++)
-        {
-            if (array.InternalData[i] == 0f)
-                throw new DivideByZeroException("Division by zero in IntermediateArray.");
 
-            resultData[i] = scalar * array.InternalData[i];
+        for (int i = 0; i < resultData.Length; i++)
+        {
+            resultData[i] = array.InternalData[i] * scalar;
         }
-        return new IntermediateArray(resultData, (int[])array.Shape.Clone());
+
+        return new IntermediateArray(resultData, array.Shape);
     }
 
     /// <summary>
@@ -730,23 +676,7 @@ public class IntermediateArray
     }
 
     /// <summary>
-    /// NumPy-like elementwise equality comparison.
-    /// Returns a float NDArray with 1.0 where elements are equal, 0.0 otherwise.
-    /// </summary>
-    public static IntermediateArray Equal(IntermediateArray a, IntermediateArray b)
-    {
-        if (!a.Shape.SequenceEqual(b.Shape))
-            throw new ArgumentException("Shapes must match for elementwise comparison (broadcasting not implemented).");
-
-        float[] resultData = new float[a.InternalData.Length];
-        for (int i = 0; i < resultData.Length; i++)
-            resultData[i] = a.InternalData[i] == b.InternalData[i] ? 1.0f : 0.0f;
-
-        return new IntermediateArray(resultData, a.Shape.ToArray());
-    }
-
-    /// <summary>
-    /// NumPy-like elementwise multiplication with a boolean scalar.
+    /// Elementwise multiplication with a boolean scalar.
     /// If flag is true, returns a copy of the input NDArray.
     /// If flag is false, returns all zeros with the same shape.
     /// </summary>
@@ -756,16 +686,13 @@ public class IntermediateArray
 
         if (flag)
         {
-            // Copy data as-is
             for (int i = 0; i < resultData.Length; i++)
+            {
                 resultData[i] = a.InternalData[i];
-        }
-        else
-        {
-            // Already initialized to zeros, no need to loop
+            }
         }
 
-        return new IntermediateArray(resultData, a.Shape.ToArray());
+        return new IntermediateArray(resultData, a.Shape);
     }
 
     /// <summary>
@@ -1296,7 +1223,7 @@ public class IntermediateArray
 
     /// <summary>
     /// NumPy-like sum along an axis.
-    /// axis = -1 → sum over all elements.
+    /// dim = -1 → sum over all elements.
     /// keepdims = true → keep reduced axis as length 1.
     /// keepdims = false → drop reduced axis.
     /// </summary>
@@ -1351,4 +1278,29 @@ public class IntermediateArray
     }
 
     public float GetMultiIndexData(int[] indexes) => InternalData[FlattenIndex(indexes)];
+
+    private static int MultiplyTotalIndex(int[] indexes)
+    {
+        int output = 1;
+
+        for (int i = 0; i < indexes.Length; i++)
+        {
+            output *= indexes[i];
+        }
+
+        return output;
+    }
+
+    public static IntermediateArray Value(float value, int[] shape)
+    {
+        int expandedShape = MultiplyTotalIndex(shape);
+        float[] data = new float[expandedShape];
+
+        for (int i = 0; i < expandedShape; i++)
+        {
+            data[i] = 1;
+        }
+
+        return new IntermediateArray(data, shape);
+    }
 }
