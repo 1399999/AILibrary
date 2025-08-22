@@ -51,8 +51,9 @@ public class IntermediateArray
         }
     }
 
-    // Helper: compute flat index
-    private int GetFlatIndex(int[] indexes)
+    // Exmaples: Index[2, 5] = InternalData[(2 * 27) + (5 * 1)], the list is: [32, 27]
+    // Examples: Index[2, 7, 8] = InternalData[(2 * 27 * 22) + (7 * 22) + (8 * 1)], the list is: [32, 27, 22]
+    private int FlattenIndex(int[] indexes)
     {
         List<int> grandIndexes = new();
 
@@ -73,8 +74,8 @@ public class IntermediateArray
 
     public float this[params int[] indices]
     {
-        get => InternalData[GetFlatIndex(indices)];
-        set => InternalData[GetFlatIndex(indices)] = value;
+        get => InternalData[FlattenIndex(indices)];
+        set => InternalData[FlattenIndex(indices)] = value;
     }
 
     // Expand: turn flat Data into jagged float[][]…[]
@@ -1349,24 +1350,5 @@ public class IntermediateArray
         return new IntermediateArray(result, newShape);
     }
 
-    // Exmaples: Index[2, 5] = InternalData[(2 * 27) + (5 * 1)], the list is: [32, 27]
-    // Examples: Index[2, 7, 8] = InternalData[(2 * 27 * 22) + (7 * 22) + (8 * 1)], the list is: [32, 27, 22]
-    public float Index(int[] indexes)
-    {
-        List<int> grandIndexes = new();
-
-        for (int i = 0; i < indexes.Length - 1; i++)
-        {
-            grandIndexes.Add(indexes[i]);
-
-            int j = i + 1;
-
-            for (int k = 0; k < Shape.Length - j; k++)
-            {
-                grandIndexes[i] *= Shape[j + k];
-            }
-        }
-
-        return InternalData[grandIndexes.Sum() + indexes[^1]];
-    }
+    public float GetMultiIndexData(int[] indexes) => InternalData[FlattenIndex(indexes)];
 }

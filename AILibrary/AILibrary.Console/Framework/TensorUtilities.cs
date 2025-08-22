@@ -107,7 +107,7 @@ public static class TensorUtilities
 
             for (int j = 0; j < array.Shape[0]; j++)
             {
-                floats[i][j] = prob.Data.Index(new int[] { (int)range.InternalData[i], (int)array[j] });
+                floats[i][j] = prob.Data.GetMultiIndexData(new int[] { (int)range.InternalData[i], (int)array[j] });
             }
         }
 
