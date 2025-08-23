@@ -1,6 +1,4 @@
-﻿using System.Formats.Asn1;
-
-namespace AILibrary.Framework;
+﻿namespace AILibrary.Framework;
 
 public class Tensor
 {
@@ -59,7 +57,7 @@ public class Tensor
     /// <param name="z"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public void Backward(IntermediateArray? grad = null, dynamic? z = null)
+    public void Backward(IntermediateArray? grad = null, Tensor? z = null)
     {
         if (!RequiresGrad)
         {
@@ -258,7 +256,7 @@ public class Tensor
             IntermediateArray data = a.Data + b.Data;
 
             // Create new Tensor's data:
-            Tensor z = new Tensor(data, requiresGrad, operation: new AddClass());
+            Tensor z = new Tensor(data, requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(a);
@@ -341,7 +339,7 @@ public class Tensor
             IntermediateArray data = -a.Data;
 
             // Create new Tensor's data:
-            Tensor z = new Tensor(data, requiresGrad, operation: new NegClass());
+            Tensor z = new Tensor(data, requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(a);
@@ -378,7 +376,7 @@ public class Tensor
             IntermediateArray data = a.Data * b.Data;
 
             // Create new Tensor's data:
-            Tensor z = new Tensor(data, requiresGrad, operation: new MulClass());
+            Tensor z = new Tensor(data, requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(a);
@@ -463,7 +461,7 @@ public class Tensor
             IntermediateArray data = a.Data / b.Data;
 
             // Create new Tensor's data:
-            Tensor z = new Tensor(data, requiresGrad, operation: new DivClass());
+            Tensor z = new Tensor(data, requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(a);
@@ -546,7 +544,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
             var data = tensorA.Data ^ tensorB.Data;
 
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new PowClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             tensorA.Children.Add(z);
 
@@ -598,7 +596,7 @@ public class Tensor
             var data = tensorA.Data.Matmul(tensorB.Data);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MatMulClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -669,7 +667,7 @@ public class Tensor
             IntermediateArray data = tensorA.Data.Exp();
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ExpClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -708,7 +706,7 @@ public class Tensor
             var data = tensorA.Data.Log();
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new LogClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -746,7 +744,7 @@ public class Tensor
             IntermediateArray data = tensorA.Data.Sqrt();
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SqrtClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -785,7 +783,7 @@ public class Tensor
             var data = tensorA.Data.Sum(dim: dim, keepdims: keepdims);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SumClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -824,7 +822,7 @@ public class Tensor
             var data = tensorA.Data.Mean(axis: dim);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MeanClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -873,7 +871,7 @@ public class Tensor
             }
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MaxClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -930,7 +928,7 @@ public class Tensor
             var data = tensorA.Data.Var(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new VarClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -973,7 +971,7 @@ public class Tensor
             var data = tensorA.Data.Reshape(shape);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new ReshapeClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -1014,7 +1012,7 @@ public class Tensor
             var data = tensorA.Data.SwapAxes(axis1, axis2);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new TransposeClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -1072,7 +1070,7 @@ public class Tensor
             IntermediateArray data = IntermediateArray.Concatenate(temp.ToArray(), axis: dim);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new CatClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents = tensors;
@@ -1140,7 +1138,7 @@ public class Tensor
             IntermediateArray data = IntermediateArray.Stack(temp, axis: dim);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new StackClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents = tensors;
@@ -1192,7 +1190,7 @@ public class Tensor
             IntermediateArray data = IntermediateArray.Where(condition, tensorA.Data, value);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new MaskedFillClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
@@ -1234,7 +1232,7 @@ public class Tensor
             IntermediateArray data = tensorA.Data.IndexRow(index);
 
             // Create new Tensor:
-            var z = new Tensor(data, requiresGrad: requiresGrad, operation: new SliceClass());
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
 
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
