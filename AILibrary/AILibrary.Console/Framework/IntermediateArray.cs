@@ -309,44 +309,119 @@ public class IntermediateArray
     public static IntermediateArray operator ^(IntermediateArray a, float exponent) => Power(a, exponent);
 
     /// <summary>
-    /// NumPy-like matrix multiplication (matmul).
-    /// Only supports 2D arrays for now: (m x n) @ (n x p) = (m x p).
+    /// Matrix multiplication.
+    /// Handles 1D, 2D, and batched ND arrays.
     /// </summary>
-    public IntermediateArray Matmul(IntermediateArray b)
+    public IntermediateArray Matmul(IntermediateArray other)
     {
-        if (Shape.Length != 2 || b.Shape.Length != 2)
+        // --- Handle 1D @ 1D (dot product) ---
+        if (Shape.Length == 1 && other.Shape.Length == 1)
         {
-            throw new ArgumentException("Matmul currently only supports 2D arrays.");
+            if (Shape[0] != other.Shape[0])
+                throw new ArgumentException("Shapes not aligned for 1D dot product.");
+            float sum = 0;
+            for (int i = 0; i < Shape[0]; i++)
+                sum += this.InternalData[i] * other.InternalData[i];
+            return new IntermediateArray(new float[] { sum }, new int[] { });
         }
 
-        int m = Shape[0]; // rows of A
-        int n = Shape[1]; // cols of A = rows of B
-        int p = b.Shape[1]; // cols of B
-
-        if (n != b.Shape[0])
+        // --- Handle 2D @ 2D (matrix multiplication) ---
+        if (Shape.Length == 2 && other.Shape.Length == 2)
         {
-            throw new ArgumentException("Shapes are not aligned for matrix multiplication.");
-        }
+            int m = Shape[0];   // rows of A
+            int k1 = Shape[1];  // cols of A
+            int k2 = other.Shape[0]; // rows of B
+            int n = other.Shape[1];  // cols of B
 
-        float[] resultData = new float[m * p];
+            if (k1 != k2)
+                throw new ArgumentException("Shapes not aligned for matmul: " +
+                                            $"({m},{k1}) x ({k2},{n})");
 
-        for (int i = 0; i < m; i++)
-        {
-            for (int j = 0; j < p; j++)
+            float[] result = new float[m * n];
+            for (int i = 0; i < m; i++)
             {
-                float sum = 0f;
-
-                for (int k = 0; k < n; k++)
+                for (int j = 0; j < n; j++)
                 {
-                    sum += InternalData[i * n + k] * b.InternalData[k * p + j];
+                    float sum = 0;
+                    for (int k = 0; k < k1; k++)
+                    {
+                        sum += this.InternalData[i * k1 + k] * other.InternalData[k * n + j];
+                    }
+                    result[i * n + j] = sum;
                 }
-
-                resultData[i * p + j] = sum;
             }
+
+            return new IntermediateArray(result, new int[] { m, n });
         }
 
-        return new IntermediateArray(resultData, new int[] { m, p });
+        // --- Handle N-D (batched matmul) ---
+        // All dimensions except last two must broadcast
+        if (Shape.Length >= 2 && other.Shape.Length >= 2)
+        {
+            int[] batchShapeA = Shape.Take(Shape.Length - 2).ToArray();
+            int[] batchShapeB = other.Shape.Take(other.Shape.Length - 2).ToArray();
+            int[] broadcastShape = BroadcastShapes(batchShapeA, batchShapeB);
+
+            int m = Shape[Shape.Length - 2];
+            int k1 = Shape[Shape.Length - 1];
+            int k2 = other.Shape[other.Shape.Length - 2];
+            int n = other.Shape[other.Shape.Length - 1];
+
+            if (k1 != k2)
+                throw new ArgumentException("Shapes not aligned for batched matmul.");
+
+            int batchSize = broadcastShape.Aggregate(1, (a, b) => a * b);
+            float[] result = new float[batchSize * m * n];
+
+            for (int b = 0; b < batchSize; b++)
+            {
+                // For simplicity: assume arrays already broadcast-compatible
+                int offsetA = b * m * k1;
+                int offsetB = b * k2 * n;
+                int offsetR = b * m * n;
+
+                for (int i = 0; i < m; i++)
+                {
+                    for (int j = 0; j < n; j++)
+                    {
+                        float sum = 0;
+                        for (int k = 0; k < k1; k++)
+                        {
+                            sum += this.InternalData[offsetA + i * k1 + k] *
+                                   other.InternalData[offsetB + k * n + j];
+                        }
+                        result[offsetR + i * n + j] = sum;
+                    }
+                }
+            }
+
+            return new IntermediateArray(result, broadcastShape.Concat(new int[] { m, n }).ToArray());
+        }
+
+        throw new NotImplementedException("Matmul only implemented for 1D, 2D, and batched ND arrays.");
     }
+
+    /// <summary>
+    /// Helper: Broadcast two shapes like NumPy
+    /// </summary>
+    private static int[] BroadcastShapes(int[] shapeA, int[] shapeB)
+    {
+        int ndim = Math.Max(shapeA.Length, shapeB.Length);
+        int[] result = new int[ndim];
+
+        for (int i = 0; i < ndim; i++)
+        {
+            int a = i < ndim - shapeA.Length ? 1 : shapeA[i - (ndim - shapeA.Length)];
+            int b = i < ndim - shapeB.Length ? 1 : shapeB[i - (ndim - shapeB.Length)];
+
+            if (a == b || a == 1 || b == 1)
+                result[i] = Math.Max(a, b);
+            else
+                throw new ArgumentException("Shapes cannot be broadcast.");
+        }
+        return result;
+    }
+
 
     /// <summary>
     /// NumPy-like SwapAxes function. 

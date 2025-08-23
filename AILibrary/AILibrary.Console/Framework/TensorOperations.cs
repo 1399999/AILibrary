@@ -185,7 +185,7 @@ public class Tensor
     /// <param name="dim">Dimention to be reduced (only largest remains).</param>
     /// <param name="keepDims">Whether to broadcast result to same shape as input.</param>
     /// <returns></returns>
-    public Tensor GetMax(int dim = -1, bool keepdims = false) => new MaxClass().Forward(this, dim, keepdims: keepdims);
+    public Tensor Max(int dim = -1, bool keepdims = false) => new MaxClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the sum of all values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -201,7 +201,7 @@ public class Tensor
     /// <param name="dim">Dimention to be averaged across.</param>
     /// <param name="keepDims">Wether to broadcast result to same shape as input.</param>
     /// <returns>Returns the mean of all values across the "dim" dimention.</returns>
-    public Tensor GetMean(int dim = -1, bool keepdims = false) => new MeanClass().Forward(this, dim, keepdims: keepdims);
+    public Tensor Mean(int? dim = null, bool keepdims = false) => new MeanClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the variance of all values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -814,9 +814,9 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public int cacheExtension = 0;
+        public int? cacheExtension = null;
 
-        public Tensor Forward(Tensor tensorA, int dim, bool keepdims)
+        public Tensor Forward(Tensor tensorA, int? dim, bool keepdims)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
@@ -838,7 +838,7 @@ public class Tensor
         public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            int dim = cacheExtension;
+            int? dim = cacheExtension;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)

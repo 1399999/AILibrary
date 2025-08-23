@@ -89,29 +89,67 @@ public static class TensorUtilities
         return a / b;
     }
 
-    public static Tensor CrossEntropy(this Tensor logits, IntermediateArray array)
+    public static IntermediateArray CrossEntropy(this Tensor logits, IntermediateArray labels)
     {
-        logits = logits / logits.Sum(dim: 1, keepdims: true);
+        if (logits.Shape.Length != 2)
+            throw new ArgumentException("CrossEntropy expects 2D logits of shape (batch_size, num_classes).");
 
-        var counts = logits.Exp();
-        var prob = counts / counts.Sum(1, keepdims: true);
+        int batch = logits.Shape[0];
+        int classes = logits.Shape[1];
 
-        prob = -prob;
-        var range = ArangeInt(32);
-
-        float[][] floats = new float[range.Shape[0]][];
-
-        for (int i = 0; i < range.Shape[0]; i++)
+        // --- Softmax computation with numerical stability ---
+        float[] stabilized = new float[logits.Data.InternalData.Length];
+        for (int i = 0; i < batch; i++)
         {
-            floats[i] = new float[array.Shape[0]];
+            float maxVal = float.MinValue;
+            for (int j = 0; j < classes; j++)
+                maxVal = Math.Max(maxVal, logits.Data[i * classes + j]);
 
-            for (int j = 0; j < array.Shape[0]; j++)
+            for (int j = 0; j < classes; j++)
+                stabilized[i * classes + j] = logits.Data[i * classes + j] - maxVal;
+        }
+        var stabilizedND = new IntermediateArray(stabilized, logits.Shape);
+
+        var expVals = stabilizedND.Exp(); // exp(logits)
+        var expSums = expVals.Sum(dim: 1, keepdims: true); // sum(exp) per row
+        var softmax = IntermediateArray.Divide(expVals, expSums); // softmax probabilities
+        var logSoftmax = softmax.Log();
+
+        float loss = 0f;
+
+        // --- Case 1: One-hot labels ---
+        if (labels.Shape.Length == 2)
+        {
+            if (labels.Shape[0] != batch || labels.Shape[1] != classes)
+                throw new ArgumentException("When labels are one-hot, they must have the same shape as logits.");
+
+            var mul = IntermediateArray.Multiply(labels, logSoftmax);
+            var summed = mul.Sum(dim: -1, keepdims: false); // sum over classes
+            loss = -summed.InternalData.Sum() / batch;
+        }
+        // --- Case 2: Class index labels ---
+        else if (labels.Shape.Length == 1)
+        {
+            if (labels.Shape[0] != batch)
+                throw new ArgumentException("When labels are class indices, they must have shape (batch,).");
+
+            for (int i = 0; i < batch; i++)
             {
-                floats[i][j] = prob.Data.GetMultiIndexData(new int[] { (int)range.InternalData[i], (int)array[j] });
+                int classIdx = (int)labels.InternalData[i];
+                if (classIdx < 0 || classIdx >= classes)
+                    throw new ArgumentException("Label out of range of class count.");
+
+                float logProb = logSoftmax.InternalData[i * classes + classIdx];
+                loss += -logProb;
             }
+            loss /= batch;
+        }
+        else
+        {
+            throw new ArgumentException("Labels must be either one-hot encoded (2D) or class indices (1D).");
         }
 
-        return new Tensor(new IntermediateArray(floats));
+        return new IntermediateArray(new float[] { loss }, new int[] { });
     }
 
     public static IntermediateArray ArangeInt(this int ender) // 0 -> ender

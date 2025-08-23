@@ -2,9 +2,9 @@
 
 public static class TrainedAIWordGenerator
 {
-    static int blockSize = 3;
+    static int BLOCK_SIZE = 3;
 
-    public static void GenerateWord()
+    public static void GenerateWord(int seed = int.MaxValue)
     {
         string[] words = File.ReadAllLines("C:\\AITrainingSets\\Names.txt");
 
@@ -32,7 +32,7 @@ public static class TrainedAIWordGenerator
         {
             string word = string.Empty;
 
-            for (int j = 0; j < blockSize; j++)
+            for (int j = 0; j < BLOCK_SIZE; j++)
             {
                 word += SystemModel.Alphabet[0];
             }
@@ -42,9 +42,9 @@ public static class TrainedAIWordGenerator
 
             for (int j = 0; j < words[i].Length + 1; j++, l++)
             {
-                blockSizeWordsTemp[l] = new int[blockSize];
+                blockSizeWordsTemp[l] = new int[BLOCK_SIZE];
 
-                for (int k = 0; k < blockSize; k++)
+                for (int k = 0; k < BLOCK_SIZE; k++)
                 {
                     blockSizeWordsTemp[l][k] = SystemModel.AlphabetNumbers[word[j + k]];
                 }
@@ -53,15 +53,15 @@ public static class TrainedAIWordGenerator
 
         Tensor blockSizeWords = new Tensor(blockSizeWordsTemp.Float());
 
-        Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, int.MaxValue); // C
+        Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, seed); // C
 
-        var weights1 = RandomNeuron.CreateRandomNeurons(blockSize * 2, 100, true, int.MaxValue); // W1
-        var biases1 = RandomNeuron.CreateRandomNeurons(100, true, int.MaxValue); // b1
-        var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, int.MaxValue); // W2
-        var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, int.MaxValue); // b2 
+        var weights1 = RandomNeuron.CreateRandomNeurons(BLOCK_SIZE * 2, 100, true, seed); // W1
+        var biases1 = RandomNeuron.CreateRandomNeurons(100, true, seed); // b1
+        var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, seed); // W2
+        var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, seed); // b2 
 
         long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
-        Console.WriteLine(paramaters);
+        //Console.WriteLine(paramaters);
 
         var emb = blockSizeWords.IndexInto(neuralNet.Data);
         var kiloList = emb.Reshape([-1, 6]);
@@ -71,7 +71,7 @@ public static class TrainedAIWordGenerator
 
         var tempLogits = tanhList.Matmul(weights2);
         var logits = tempLogits + biases2;
-        float loss = logits.CrossEntropy(allWords.Data).Data[0];
+        float loss = logits.CrossEntropy(allWords.Data).InternalData[0];
 
         Console.WriteLine(loss);
     }
