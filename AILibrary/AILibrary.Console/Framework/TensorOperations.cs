@@ -1,4 +1,7 @@
-﻿namespace AILibrary.Framework;
+﻿using System;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace AILibrary.Framework;
 
 public class Tensor
 {
@@ -131,7 +134,13 @@ public class Tensor
     /// <param name="other"></param>
     /// <returns></returns>
     public static Tensor operator -(Tensor self, Tensor other) => self + (new Tensor((-1F).Value(self.Shape)) * other);
-    public static Tensor operator -(Tensor self, float other) => self + new Tensor(other) * new Tensor((-1F).Value(self.Shape));
+    public static Tensor operator -(Tensor self, float other)
+    {
+        var b = new Tensor((-1F).Value(self.Shape));
+        var a = new Tensor(other.Value(b.Shape)) * b;
+
+        return self + a;
+    }
     public static Tensor operator -(Tensor other) => new NegClass().Forward(other);
 
     /// <summary>
@@ -242,6 +251,18 @@ public class Tensor
     /// </summary>
     /// <returns>Returns the exponentiated Tensor.</returns>
     public Tensor Log() => new LogClass().Forward(this);
+
+    public float[] ToItem() => Data.InternalData;
+
+    public Tensor this[IntermediateArray array]
+    {
+        get => new SliceClass().Forward(this, array);
+    }
+
+    public Tensor this[List<IntermediateArray> array]
+    {
+        get => new SliceClass().Forward(this, array);
+    }
 
     private class AddClass()
     {
@@ -1223,6 +1244,7 @@ public class Tensor
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
         public IntermediateArray? cacheExtension;
+        public List<IntermediateArray>? cacheExtension2;
 
         public Tensor Forward(Tensor tensorA, IntermediateArray index)
         {
@@ -1239,6 +1261,25 @@ public class Tensor
             tensorA.Children.Add(z);
             Cache.Add(tensorA);
             cacheExtension = index;
+
+            return z;
+        }
+
+        public Tensor Forward(Tensor tensorA, List<IntermediateArray> indexes)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            IntermediateArray data = tensorA.Data.Select(indexes);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache.Add(tensorA);
+            cacheExtension2 = indexes;
 
             return z;
         }
