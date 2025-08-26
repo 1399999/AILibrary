@@ -280,24 +280,30 @@ public class IntermediateArray
     /// </summary>
     public IntermediateArray Reshape(params int[] newShape)
     {
-        // Compute the total number of elements in the current array
-        int totalSize = Shape.Aggregate(1, (a, b) => a * b);
+        // Compute the total number of elements in the current array.
+        int totalSize = MultiplyTotalIndex(Shape);
 
-        // Handle -1 (infer dimension)
+        // Handle -1 (infer dimension).
         int negativeOneCount = newShape.Count(d => d == -1);
+
         if (negativeOneCount > 1)
+        {
             throw new ArgumentException("Only one dimension can be -1.");
+        }
 
         if (negativeOneCount == 1)
         {
             int knownProduct = 1;
+
             foreach (var d in newShape)
             {
                 if (d != -1) knownProduct *= d;
             }
 
             if (totalSize % knownProduct != 0)
-                throw new ArgumentException("Cannot reshape array: incompatible shape.");
+            {
+                throw new ArgumentException("Cannot reshape array: Incompatible shape.");
+            }
 
             int inferredDim = totalSize / knownProduct;
             newShape = newShape.Select(d => d == -1 ? inferredDim : d).ToArray();
@@ -305,13 +311,15 @@ public class IntermediateArray
 
         // Verify that total size matches
         int newTotal = newShape.Aggregate(1, (a, b) => a * b);
+
         if (newTotal != totalSize)
+        {
             throw new ArgumentException("Cannot reshape array: total size mismatch.");
+        }
 
         // Return new NDArray with same Data but new shape
         return new IntermediateArray(InternalData, newShape);
     }
-
 
     #endregion
     #region Index Expansions (Fully Unrefactored)
@@ -425,20 +433,21 @@ public class IntermediateArray
     #endregion
     #region Unrefactored Operations (Fully Unrefactored)
 
-    // -------- numpy.prod() implementation --------
-    public IntermediateArray Prod(int[]? axes = null, bool keepDims = false) // NOT REFACTORED
+    public IntermediateArray Prod()
     {
-        if (axes == null || axes.Length == 0)
-        {
-            // Multiply everything
-            float product = 1.0f;
-            foreach (var v in InternalData)
-                product *= v;
+        // Multiply everything.
+        float product = 1.0F;
 
-            return new IntermediateArray(new float[] { product },
-                               keepDims ? new int[Shape.Length] : new int[0]);
+        foreach (var v in InternalData)
+        {
+            product *= v;
         }
 
+        return new IntermediateArray(new float[] { product });
+    }
+
+    public IntermediateArray Prod(int[]? axes = null, bool keepDims = false) // NOT REFACTORED
+    {
         axes = axes.Distinct().OrderBy(a => a).ToArray();
 
         // Validate axes
@@ -649,6 +658,21 @@ public class IntermediateArray
         return new IntermediateArray(resultData, newShape);
     } 
 
+    public IntermediateArray Mean()
+    {
+        // Global mean -> single scalar.
+        float sum = 0F;
+
+        for (int i = 0; i < InternalData.Length; i++)
+        {
+            sum += InternalData[i];
+        }
+
+        float mean = sum / InternalData.Length;
+
+        return new IntermediateArray(new float[] { mean });
+    }
+
     /// <summary>
     /// NumPy-like mean function.
     /// If axis is null, returns the mean of all elements (scalar IntermediateArray unless keepdims=true).
@@ -656,82 +680,68 @@ public class IntermediateArray
     /// </summary>
     public IntermediateArray Mean(int? axis = null, bool keepdims = false) // NOT REFACTORED
     {
-        if (axis == null)
-        {
-            // Global mean → single scalar
-            float sum = 0f;
-            for (int i = 0; i < InternalData.Length; i++)
-                sum += InternalData[i];
-            float mean = sum / InternalData.Length;
+        int ax = axis.Value;
+        if (ax < 0 || ax >= Shape.Length)
+            throw new ArgumentException("Axis out of range.");
 
-            int[] shape = keepdims ? Enumerable.Repeat(1, Shape.Length).ToArray() : new int[] { };
-            return new IntermediateArray(new float[] { mean }, shape);
+        int axisSize = Shape[ax];
+
+        // Compute strides
+        int[] strides = ComputeStrides(Shape);
+
+        // New shape
+        int[] newShape;
+        if (keepdims)
+        {
+            newShape = Shape.ToArray();
+            newShape[ax] = 1;
         }
         else
         {
-            int ax = axis.Value;
-            if (ax < 0 || ax >= Shape.Length)
-                throw new ArgumentException("Axis out of range.");
-
-            int axisSize = Shape[ax];
-
-            // Compute strides
-            int[] strides = ComputeStrides(Shape);
-
-            // New shape
-            int[] newShape;
-            if (keepdims)
-            {
-                newShape = Shape.ToArray();
-                newShape[ax] = 1;
-            }
-            else
-            {
-                newShape = Shape.Where((_, i) => i != ax).ToArray();
-            }
-
-            float[] resultData = new float[InternalData.Length / axisSize];
-
-            // Recursive iterator
-            void Recurse(int[] indices, int depth, int resultIndex)
-            {
-                if (depth == Shape.Length)
-                    return;
-
-                if (depth == ax)
-                {
-                    float sum = 0f;
-                    for (int j = 0; j < axisSize; j++)
-                    {
-                        indices[depth] = j;
-                        int flatIndex = 0;
-                        for (int k = 0; k < Shape.Length; k++)
-                            flatIndex += indices[k] * strides[k];
-                        sum += InternalData[flatIndex];
-                    }
-                    resultData[resultIndex] = sum / axisSize;
-                    return;
-                }
-
-                for (int i = 0; i < Shape[depth]; i++)
-                {
-                    indices[depth] = i;
-                    int newFlat = 0, count = 0;
-
-                    for (int k = 0; k < Shape.Length; k++)
-                    {
-                        if (!keepdims && k == ax) continue;
-                        newFlat += indices[k] * ComputeStrides(newShape)[count++];
-                    }
-
-                    Recurse(indices, depth + 1, newFlat);
-                }
-            }
-
-            Recurse(new int[Shape.Length], 0, 0);
-
-            return new IntermediateArray(resultData, newShape);
+            newShape = Shape.Where((_, i) => i != ax).ToArray();
         }
+
+        float[] resultData = new float[InternalData.Length / axisSize];
+
+        // Recursive iterator
+        void Recurse(int[] indices, int depth, int resultIndex)
+        {
+            if (depth == Shape.Length)
+                return;
+
+            if (depth == ax)
+            {
+                float sum = 0f;
+                for (int j = 0; j < axisSize; j++)
+                {
+                    indices[depth] = j;
+                    int flatIndex = 0;
+                    for (int k = 0; k < Shape.Length; k++)
+                        flatIndex += indices[k] * strides[k];
+                    sum += InternalData[flatIndex];
+                }
+                resultData[resultIndex] = sum / axisSize;
+                return;
+            }
+
+            for (int i = 0; i < Shape[depth]; i++)
+            {
+                indices[depth] = i;
+                int newFlat = 0, count = 0;
+
+                for (int k = 0; k < Shape.Length; k++)
+                {
+                    if (!keepdims && k == ax) continue;
+                    newFlat += indices[k] * ComputeStrides(newShape)[count++];
+                }
+
+                Recurse(indices, depth + 1, newFlat);
+            }
+        }
+
+        Recurse(new int[Shape.Length], 0, 0);
+
+        return new IntermediateArray(resultData, newShape);
     }
 
     /// <summary>
@@ -741,7 +751,9 @@ public class IntermediateArray
     public IntermediateArray Max()
     {
         if (InternalData.Length == 0)
+        {
             throw new InvalidOperationException("max() not defined for an empty array.");
+        }
 
         float m = float.NegativeInfinity;
         bool sawNaN = false;
@@ -749,8 +761,17 @@ public class IntermediateArray
         for (int i = 0; i < InternalData.Length; i++)
         {
             float v = InternalData[i];
-            if (float.IsNaN(v)) { sawNaN = true; break; }
-            if (v > m) m = v;
+
+            if (float.IsNaN(v)) 
+            { 
+                sawNaN = true; 
+                break; 
+            }
+
+            if (v > m) 
+            {
+                m = v;
+            }
         }
 
         return new IntermediateArray(new float[] { sawNaN ? float.NaN : m }, new int[] { });
@@ -822,6 +843,24 @@ public class IntermediateArray
     }
 
     /// <summary>
+    /// Calculates the variance of all elements.
+    /// </summary>
+    public IntermediateArray Var()
+    {
+        float mean = InternalData.Average();
+        float sumSq = 0F;
+
+        foreach (var x in InternalData)
+        {
+            sumSq += (x - mean) * (x - mean);
+        }
+
+        float variance = sumSq / InternalData.Length;
+
+        return new IntermediateArray(new float[] { variance }, new int[] { 1 });
+    }
+
+    /// <summary>
     /// NumPy-like variance (var) with axis and keepdims support.
     /// Default is population variance (ddof=0).
     /// Supports 1D and 2D NDArray.
@@ -849,6 +888,7 @@ public class IntermediateArray
                 return new IntermediateArray(new float[] { variance }, new int[] { 1 });
             }
         }
+
         else if (Shape.Length == 2)
         {
             int rows = Shape[0];
@@ -1252,16 +1292,17 @@ public class IntermediateArray
         return new IntermediateArray(sliceData.ToArray(), newShape);
     }
 
-    // In your NDArray class
     /// <summary>
-    /// Sum of all elements (NumPy: a.sum()).
-    /// Returns a scalar NDArray.
+    /// Sum of all elements.
     /// </summary>
-    public IntermediateArray Sum()
+    public IntermediateArray Sum() // REFACTORED
     {
-        float total = 0f;
+        float total = 0F;
+
         for (int i = 0; i < InternalData.Length; i++)
+        {
             total += InternalData[i];
+        }
 
         return new IntermediateArray(new float[] { total }, new int[] { });
     }
