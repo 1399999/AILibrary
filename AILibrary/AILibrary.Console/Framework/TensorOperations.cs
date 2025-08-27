@@ -208,7 +208,7 @@ public class Tensor
     /// <param name="dim">Dimention to be averaged across.</param>
     /// <param name="keepDims">Wether to broadcast result to same shape as input.</param>
     /// <returns>Returns the mean of all values across the "dim" dimention.</returns>
-    public Tensor Mean(int? dim = null, bool keepdims = false) => new MeanClass().Forward(this, dim, keepdims: keepdims);
+    public Tensor Mean(int dim, bool keepdims = false) => new MeanClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the variance of all values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -833,9 +833,9 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public int? cacheExtension = null;
+        public int cacheExtension = 0;
 
-        public Tensor Forward(Tensor tensorA, int? dim, bool keepdims)
+        public Tensor Forward(Tensor tensorA, int dim, bool keepdims)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
@@ -857,15 +857,14 @@ public class Tensor
         public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            int? dim = cacheExtension;
+            int dim = cacheExtension;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)
             {
                 // Propagate through the mean(x) operation:
                 var da = a.Data.OnesLike() * dz;
-                throw new NotImplementedException();
-                //da /= a.Data[dim].Prod();
+                da /= a.Data.ZerosLike().IndexRow(dim).Prod();
                 a.Backward(da, z);
             }
         }
