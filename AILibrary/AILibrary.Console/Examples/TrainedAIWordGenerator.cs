@@ -53,12 +53,17 @@ public static class TrainedAIWordGenerator
 
         Tensor blockSizeWords = new Tensor(blockSizeWordsTemp.Float());
 
-        Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, seed); // C
+        //Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, seed); // C
+        Tensor neuralNet = new Tensor(SystemModel.NeuralNet); // C
 
-        var weights1 = RandomNeuron.CreateRandomNeurons(BLOCK_SIZE * 2, 100, true, seed); // W1
-        var biases1 = RandomNeuron.CreateRandomNeurons(100, true, seed); // b1
-        var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, seed); // W2
-        var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, seed); // b2 
+        //var weights1 = RandomNeuron.CreateRandomNeurons(BLOCK_SIZE * 2, 100, true, seed); // W1
+        //var biases1 = RandomNeuron.CreateRandomNeurons(100, true, seed); // b1
+        //var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, seed); // W2
+        //var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, seed); // b2 
+        var weights1 = new Tensor(SystemModel.Weights1);
+        var biases1 = new Tensor(SystemModel.Biases1);
+        var weights2 = new Tensor(SystemModel.Weights2);
+        var biases2 = new Tensor(SystemModel.Biases2);
 
         long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
         //Console.WriteLine(paramaters);

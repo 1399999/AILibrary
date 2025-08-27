@@ -96,9 +96,10 @@ public static class TensorUtilities
 
         var abcd = prob[[ArangeInt(32), labels]];
         var efgh = abcd.Log();
-        var ijkl = efgh.Mean();
+        //var ijkl = efgh.Mean();
 
-        return -ijkl;
+        //return -ijkl;
+        return -efgh;
     }
 
     public static IntermediateArray ArangeInt(this int ender) // 0 -> ender
