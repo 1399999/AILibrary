@@ -54,7 +54,7 @@ public static class TrainedAIWordGenerator
         Tensor blockSizeWords = new Tensor(blockSizeWordsTemp.Float());
 
         //Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, seed); // C
-        Tensor neuralNet = new Tensor(SystemModel.NeuralNet); // C
+        Tensor neuralNet = new Tensor(new IntermediateArray(SystemModel.NeuralNet)); // C
 
         //var weights1 = RandomNeuron.CreateRandomNeurons(BLOCK_SIZE * 2, 100, true, seed); // W1
         //var biases1 = RandomNeuron.CreateRandomNeurons(100, true, seed); // b1
