@@ -92,14 +92,13 @@ public static class TensorUtilities
     public static Tensor CrossEntropy(this Tensor logits, IntermediateArray labels)
     {
         var counts = logits.Exp();
-        var prob = counts / counts.Sum(0, keepdims: true);
+        var prob = counts / counts.Sum(1, keepdims: true);
 
         var abcd = prob[[ArangeInt(32), labels]];
         var efgh = abcd.Log();
-        //var ijkl = efgh.Mean();
+        var ijkl = efgh.Mean();
 
-        //return -ijkl;
-        return -efgh;
+        return -ijkl;
     }
 
     public static IntermediateArray ArangeInt(this int ender) // 0 -> ender
@@ -129,6 +128,21 @@ public static class TensorUtilities
         return new IntermediateArray(floats, new int[] { array.InternalData.Length, times });
     }
 
+    public static IntermediateArray ExpandOther(this IntermediateArray array, int times)
+    {
+        float[] floats = new float[times * array.InternalData.Length];
+
+        for (int i = 0; i < array.InternalData.Length; i++)
+        {
+            for (int j = 0; j < times; j++)
+            {
+                floats[(i * times) + j] = array.InternalData[i];
+            }
+        }
+
+        return new IntermediateArray(floats, new int[] { array.InternalData.Length, times });
+    }
+
     public static (IntermediateArray, IntermediateArray) Broadcast(this IntermediateArray a, IntermediateArray b)
     {
         if (a.InternalData.Length > b.InternalData.Length)
@@ -139,6 +153,21 @@ public static class TensorUtilities
         else
         {
             a = a.Expand(b.InternalData.Length / a.InternalData.Length);
+        }
+
+        return (a, b);
+    }
+
+    public static (IntermediateArray, IntermediateArray) BroadcastOther(this IntermediateArray a, IntermediateArray b)
+    {
+        if (a.InternalData.Length > b.InternalData.Length)
+        {
+            b = b.ExpandOther(a.InternalData.Length / b.InternalData.Length);
+        }
+
+        else
+        {
+            a = a.ExpandOther(b.InternalData.Length / a.InternalData.Length);
         }
 
         return (a, b);

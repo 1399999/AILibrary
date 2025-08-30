@@ -78,12 +78,12 @@ public static class TrainedAIWordGenerator
         var logits = tempLogits + biases2;
         Tensor loss = logits.CrossEntropy(allWords.Data);
 
-        loss.Backward();
+        //loss.Backward();
 
-        //weights1 = weights1 - (weights1.Grad * 0.01F);
-        //weights2 = weights2 - (weights2.Grad * 0.01F);
+        ////weights1 = weights1 - (weights1.Grad * 0.01F);
+        ////weights2 = weights2 - (weights2.Grad * 0.01F);
 
-        loss.ZeroGradTree();
+        //loss.ZeroGradTree();
 
         Console.WriteLine(loss.Data.InternalData[0]);
     }

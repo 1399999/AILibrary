@@ -164,7 +164,7 @@ public class IntermediateArray
     {
         if (!a.Shape.SequenceEqual(b.Shape))
         {
-            (a, b) = a.Broadcast(b);
+            (a, b) = a.BroadcastOther(b);
         }
 
         float[] resultData = new float[a.InternalData.Length];
@@ -678,9 +678,9 @@ public class IntermediateArray
     /// If axis is null, returns the mean of all elements (scalar IntermediateArray unless keepdims=true).
     /// If axis is specified, computes the mean along that axis.
     /// </summary>
-    public IntermediateArray Mean(int? axis = null, bool keepdims = false) // NOT REFACTORED
+    public IntermediateArray Mean(int axis, bool keepdims = false) // NOT REFACTORED
     {
-        int ax = axis.Value;
+        int ax = axis;
         if (ax < 0 || ax >= Shape.Length)
             throw new ArgumentException("Axis out of range.");
 
