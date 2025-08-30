@@ -1406,10 +1406,10 @@ public class IntermediateArray
 
             for (int i = 0; i < this.Shape[0]; i++)
             {
-                if (i >= values.Shape[0])
-                {
-                    break;
-                }
+                //if (i >= values.Shape[0])
+                //{
+                //    break;
+                //}
 
                 for (int j = 0; j < this.Shape[1]; j++)
                 {
@@ -1443,6 +1443,11 @@ public class IntermediateArray
 
         throw new NotImplementedException();
     }
+
+    //public static IntermediateArray IndexInto(IntermediateArray values, IntermediateArray indexers)
+    //{
+
+    //}
 
     #endregion
     #region Helper Functions (Fully Refactored)
