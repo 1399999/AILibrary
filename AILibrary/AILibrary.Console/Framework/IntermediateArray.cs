@@ -1326,7 +1326,7 @@ public class IntermediateArray
             }
         }
 
-        return new IntermediateArray(output, Shape.RemoveItem(Shape[dim]));
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[dim]) : Shape.InsertItem(dim, 1));
     }
 
     /// <summary>

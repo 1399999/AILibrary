@@ -230,4 +230,21 @@ public static class TensorUtilities
 
         return output;
     }
+
+    public static int[] InsertItem(this int[] array, int index, int item)
+    {
+        int[] output = new int[array.Length];
+
+        for (int i = 0; i < array.Length; i++)
+        {
+            output[i] = array[i];
+
+            if (i == index)
+            {
+                output[i] = item;
+            }
+        }
+
+        return output;
+    }
 }
