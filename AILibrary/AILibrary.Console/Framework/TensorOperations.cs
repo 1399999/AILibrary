@@ -306,14 +306,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    da = da.Sum(dim: 0);
+                    da = da.Sum(axis: 0);
                 }
 
                 for (int n = 0; n < a.Shape.Length; n++)
                 {
                     if (a.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepdims: true);
+                        da = da.Sum(axis: n, keepdims: true);
                     }
                 }
 
@@ -331,14 +331,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    db = db.Sum(dim: 0);
+                    db = db.Sum(axis: 0);
                 }
 
                 for (int n = 0; n < b.Shape.Length; n++)
                 {
                     if (b.Shape[n] == 1)
                     {
-                        db = db.Sum(dim: n, keepdims: true);
+                        db = db.Sum(axis: n, keepdims: true);
                     }
                 }
 
@@ -427,14 +427,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    da = da.Sum(dim: 0);
+                    da = da.Sum(axis: 0);
                 }
 
                 for (int n = 0; n < a.Shape.Length; n++)
                 {
                     if (a.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepdims: true);
+                        da = da.Sum(axis: n, keepdims: true);
                     }
                 }
 
@@ -453,14 +453,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    db = db.Sum(dim: 0);
+                    db = db.Sum(axis: 0);
                 }
 
                 for (int n = 0; n < b.Shape.Length; n++)
                 {
                     if (b.Shape[n] == 1)
                     {
-                        db = db.Sum(dim: n, keepdims: true);
+                        db = db.Sum(axis: n, keepdims: true);
                     }
                 }
 
@@ -512,14 +512,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    da = da.Sum(dim: 0);
+                    da = da.Sum(axis: 0);
                 }
 
                 for (int n = 0; n < a.Shape.Length; n++)
                 {
                     if (a.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepdims: true);
+                        da = da.Sum(axis: n, keepdims: true);
                     }
                 }
 
@@ -538,14 +538,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    db = db.Sum(dim: 0);
+                    db = db.Sum(axis: 0);
                 }
 
                 for (int n = 0; n < b.Shape.Length; n++)
                 {
                     if (b.Shape[n] == 1)
                     {
-                        db = db.Sum(dim: n, keepdims: true);
+                        db = db.Sum(axis: n, keepdims: true);
                     }
                 }
 
@@ -588,14 +588,14 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++) 
                 {
-                    da = da.Sum(dim: 0);
+                    da = da.Sum(axis: 0);
                 }
 
                 for (int n = 0; n < tensorA.Shape.Length; n++)
                 {
                     if (tensorA.Shape[n] == 1)
                     {
-                        da = da.Sum(dim: n, keepdims: true);
+                        da = da.Sum(axis: n, keepdims: true);
                     }
                 }
 
@@ -647,7 +647,7 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    da = da.Sum(dim: 0);
+                    da = da.Sum(axis: 0);
                 }
 
                 a.Backward(da, z);
@@ -665,7 +665,7 @@ public class Tensor
 
                 for (int i = 0; i < gradDim - inDim; i++)
                 {
-                    db = db.Sum(dim: 0);
+                    db = db.Sum(axis: 0);
                 }
 
                 b.Backward(db, z);
@@ -801,7 +801,7 @@ public class Tensor
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.Sum(dim: dim, keepdims: keepdims);
+            var data = tensorA.Data.Sum(axis: dim, keepdims: keepdims);
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);

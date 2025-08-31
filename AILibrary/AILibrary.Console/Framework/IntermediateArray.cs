@@ -433,10 +433,52 @@ public class IntermediateArray
     #endregion
     #region Unrefactored Operations (Fully Unrefactored)
 
+    /// <summary>
+    /// Sum of all elements.
+    /// </summary>
+    public IntermediateArray Sum() // REFACTORED
+    {
+        float total = 0F;
+
+        for (int i = 0; i < InternalData.Length; i++)
+        {
+            total += InternalData[i];
+        }
+
+        return new IntermediateArray(new float[] { total }, new int[] { });
+    }
+
+    /// <summary>
+    /// Sum of one axis.
+    /// </summary>
+    public IntermediateArray Sum(int axis, bool keepdims = false) // REFACTORED
+    {
+        if (Shape.Length <= axis)
+        {
+            throw new ArgumentException();
+        }
+
+        float[] output = new float[InternalData.Length / Shape[axis]];
+
+        int totalIndex = 0;
+
+        for (int i = 0; i < Shape[axis]; i++)
+        {
+            for (int j = 0; j < InternalData.Length / Shape[axis]; j++, totalIndex++)
+            {
+                output[j] += InternalData[totalIndex];
+            }
+        }
+
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
+    }
+
+    /// <summary>
+    /// Multiplies everything.
+    /// </summary>
     public IntermediateArray Prod()
     {
-        // Multiply everything.
-        float product = 1.0F;
+        float product = 1F;
 
         foreach (var v in InternalData)
         {
@@ -446,66 +488,29 @@ public class IntermediateArray
         return new IntermediateArray(new float[] { product });
     }
 
-    public IntermediateArray Prod(int[]? axes = null, bool keepDims = false) // NOT REFACTORED
+    /// <summary>
+    /// Product of one axis.
+    /// </summary>
+    public IntermediateArray Prod(int axis, bool keepdims = false) // NOT REFACTORED
     {
-        axes = axes.Distinct().OrderBy(a => a).ToArray();
-
-        // Validate axes
-        foreach (int axis in axes)
+        if (Shape.Length <= axis)
         {
-            if (axis < 0 || axis >= Shape.Length)
-                throw new ArgumentException($"Invalid axis {axis} for shape [{string.Join(",", Shape)}]");
+            throw new ArgumentException();
         }
 
-        // Build result shape
-        int[] resultShape = Shape.ToArray();
-        foreach (var axis in axes)
-            resultShape[axis] = 1;
+        float[] output = new float[InternalData.Length / Shape[axis]];
 
-        if (!keepDims)
-            resultShape = resultShape.Where((_, i) => !axes.Contains(i)).ToArray();
+        int totalIndex = 0;
 
-        // Allocate result
-        int resultSize = resultShape.Length == 0 ? 1 : resultShape.Aggregate(1, (a, b) => a * b);
-        float[] resultData = new float[resultSize];
-
-        // Initialize with 1.0 so multiplication works
-        for (int i = 0; i < resultData.Length; i++)
-            resultData[i] = 1.0f;
-
-        // Iterate over all elements in original array
-        int[] indices = new int[Shape.Length];
-
-        void Recurse(int dim, int resultIndex, int[] resultIndices)
+        for (int i = 0; i < Shape[axis]; i++)
         {
-            if (dim == Shape.Length)
+            for (int j = 0; j < InternalData.Length / Shape[axis]; j++, totalIndex++)
             {
-                resultData[resultIndex] *= this[indices];
-                return;
-            }
-
-            for (int i = 0; i < Shape[dim]; i++)
-            {
-                indices[dim] = i;
-                int nextResultIndex = resultIndex;
-                int[] nextResultIndices = (int[])resultIndices.Clone();
-
-                if (!axes.Contains(dim))
-                {
-                    // compute flattened index for resultIndices
-                    int idx = 0;
-                    for (int j = 0; j < nextResultIndices.Length; j++)
-                        idx = idx * resultShape[j] + nextResultIndices[j];
-                    nextResultIndex = idx;
-                }
-
-                Recurse(dim + 1, nextResultIndex, nextResultIndices);
+                output[j] *= InternalData[totalIndex];
             }
         }
 
-        Recurse(0, 0, new int[resultShape.Length]);
-
-        return new IntermediateArray(resultData, resultShape);
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
     }
 
     /// <summary>
@@ -1290,43 +1295,6 @@ public class IntermediateArray
         }
 
         return new IntermediateArray(sliceData.ToArray(), newShape);
-    }
-
-    /// <summary>
-    /// Sum of all elements.
-    /// </summary>
-    public IntermediateArray Sum() // REFACTORED
-    {
-        float total = 0F;
-
-        for (int i = 0; i < InternalData.Length; i++)
-        {
-            total += InternalData[i];
-        }
-
-        return new IntermediateArray(new float[] { total }, new int[] { });
-    }
-
-    public IntermediateArray Sum(int dim, bool keepdims = false) // REFACTORED
-    {
-        if (Shape.Length <= dim)
-        {
-            throw new ArgumentException();
-        }
-
-        float[] output = new float[InternalData.Length / Shape[dim]];
-
-        int totalIndex = 0;
-
-        for (int i = 0; i < Shape[dim]; i++)
-        {
-            for (int j = 0; j < InternalData.Length / Shape[dim]; j++, totalIndex++)
-            {
-                output[j] += InternalData[totalIndex];
-            }
-        }
-
-        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[dim]) : Shape.InsertItem(dim, 1));
     }
 
     /// <summary>
