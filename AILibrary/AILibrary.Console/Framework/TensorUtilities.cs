@@ -225,6 +225,25 @@ public static class TensorUtilities
         return new IntermediateArray(data, shape);
     }
 
+    public static float[] ValueFloat(this float value, int[] shape)
+    {
+        int expandedShape = 1;
+
+        for (int i = 0; i < shape.Length; i++)
+        {
+            expandedShape *= shape[i];
+        }
+
+        float[] data = new float[expandedShape];
+
+        for (int i = 0; i < expandedShape; i++)
+        {
+            data[i] = value;
+        }
+
+        return data;
+    }
+
     public static string ListToString(this int[] array)
     {
         string output = string.Empty;

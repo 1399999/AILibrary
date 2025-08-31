@@ -431,12 +431,12 @@ public class IntermediateArray
     }
 
     #endregion
-    #region Unrefactored Operations (Fully Unrefactored)
+    #region Unrefactored Operations (Not fully Refactored)
 
     /// <summary>
     /// Sum of all elements.
     /// </summary>
-    public IntermediateArray Sum() // REFACTORED
+    public IntermediateArray Sum()
     {
         float total = 0F;
 
@@ -451,7 +451,7 @@ public class IntermediateArray
     /// <summary>
     /// Sum of one axis.
     /// </summary>
-    public IntermediateArray Sum(int axis, bool keepdims = false) // REFACTORED
+    public IntermediateArray Sum(int axis, bool keepdims = false)
     {
         if (Shape.Length <= axis)
         {
@@ -491,7 +491,7 @@ public class IntermediateArray
     /// <summary>
     /// Product of one axis.
     /// </summary>
-    public IntermediateArray Prod(int axis, bool keepdims = false) // NOT REFACTORED
+    public IntermediateArray Prod(int axis, bool keepdims = false)
     {
         if (Shape.Length <= axis)
         {
@@ -683,7 +683,7 @@ public class IntermediateArray
     /// If axis is null, returns the mean of all elements (scalar IntermediateArray unless keepdims=true).
     /// If axis is specified, computes the mean along that axis.
     /// </summary>
-    public IntermediateArray Mean(int axis, bool keepdims = false) // REFACTORED
+    public IntermediateArray Mean(int axis, bool keepdims = false)
     {
         if (Shape.Length <= axis)
         {
@@ -711,101 +711,99 @@ public class IntermediateArray
     }
 
     /// <summary>
-    /// Max over all elements (NumPy: a.max()).
-    /// Returns a scalar NDArray. Propagates NaN if present.
+    /// Maximum over all elements.
     /// </summary>
     public IntermediateArray Max()
     {
-        if (InternalData.Length == 0)
-        {
-            throw new InvalidOperationException("max() not defined for an empty array.");
-        }
-
-        float m = float.NegativeInfinity;
-        bool sawNaN = false;
+        float min = float.NegativeInfinity;
 
         for (int i = 0; i < InternalData.Length; i++)
         {
-            float v = InternalData[i];
-
-            if (float.IsNaN(v)) 
-            { 
-                sawNaN = true; 
-                break; 
-            }
-
-            if (v > m) 
+            if (InternalData[i] > min)
             {
-                m = v;
+                min = InternalData[i];
             }
         }
 
-        return new IntermediateArray(new float[] { sawNaN ? float.NaN : m }, new int[] { });
+        return new IntermediateArray(new float[] { min });
     }
 
     /// <summary>
-    /// Max along an axis (NumPy: a.max(axis=..., keepdims=...)).
-    /// axis may be negative. keepdims retains a size-1 dimension at the reduced axis.
-    /// Propagates NaN within each reduction window.
+    /// Maximum along an axis.
     /// </summary>
     public IntermediateArray Max(int axis, bool keepdims = false)
     {
-        int ndim = Shape.Length;
-        if (ndim == 0)
-            throw new InvalidOperationException("max() not defined for a scalar with no axes.");
-
-        // Normalize axis
-        if (axis < 0) axis += ndim;
-        if (axis < 0 || axis >= ndim)
-            throw new ArgumentException("Axis out of range.", nameof(axis));
-
-        int axisSize = Shape[axis];
-        if (axisSize == 0)
-            throw new InvalidOperationException("max() not defined along an empty axis.");
-
-        // Compute outer and inner products for row-major layout
-        int outer = 1;
-        for (int i = 0; i < axis; i++) outer *= Shape[i];
-
-        int inner = 1;
-        for (int i = axis + 1; i < ndim; i++) inner *= Shape[i];
-
-        // Output shape
-        int[] outShape;
-        if (keepdims)
+        if (Shape.Length <= axis)
         {
-            outShape = Shape.ToArray();
-            outShape[axis] = 1;
-        }
-        else
-        {
-            outShape = Shape.Where((_, i) => i != axis).ToArray();
+            throw new ArgumentException();
         }
 
-        float[] outData = new float[outer * inner];
+        float[] output = float.NegativeInfinity.ValueFloat(new int[] { InternalData.Length / Shape[axis] });
 
-        // Reduce
-        for (int o = 0; o < outer; o++)
+        int totalIndex = 0;
+
+        for (int i = 0; i < Shape[axis]; i++)
         {
-            for (int i = 0; i < inner; i++)
+            float temp = InternalData[i];
+
+            for (int j = 0; j < InternalData.Length / Shape[axis]; j++, totalIndex++)
             {
-                float m = float.NegativeInfinity;
-                bool sawNaN = false;
-
-                // Walk axis dimension
-                for (int a = 0; a < axisSize; a++)
+                if (InternalData[totalIndex] > output[j])
                 {
-                    int idx = o * axisSize * inner + a * inner + i;
-                    float v = InternalData[idx];
-                    if (float.IsNaN(v)) { sawNaN = true; break; }
-                    if (v > m) m = v;
+                    output[j] = InternalData[totalIndex];
                 }
-
-                outData[o * inner + i] = sawNaN ? float.NaN : m;
             }
         }
 
-        return new IntermediateArray(outData, outShape);
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
+    }
+
+    /// <summary>
+    /// Minimum over all elements.
+    /// </summary>
+    public IntermediateArray Min()
+    {
+        float min = float.PositiveInfinity;
+
+        for (int i = 0; i < InternalData.Length; i++)
+        {
+            if (InternalData[i] < min)
+            {
+                min = InternalData[i];
+            }
+        }
+
+        return new IntermediateArray(new float[] { min });
+    }
+
+    /// <summary>
+    /// Minimum along an axis.
+    /// </summary>
+    public IntermediateArray Min(int axis, bool keepdims = false)
+    {
+        if (Shape.Length <= axis)
+        {
+            throw new ArgumentException();
+        }
+
+        float[] output = float.PositiveInfinity.ValueFloat(new int[] { InternalData.Length / Shape[axis] });
+
+        int totalIndex = 0;
+
+        for (int i = 0; i < Shape[axis]; i++)
+        {
+            float temp = InternalData[i];
+
+            for (int j = 0; j < InternalData.Length / Shape[axis]; j++, totalIndex++)
+            {
+                if (InternalData[totalIndex] < output[j])
+                {
+                    output[j] = InternalData[totalIndex];
+                }
+            }
+        }
+
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
     }
 
     /// <summary>
