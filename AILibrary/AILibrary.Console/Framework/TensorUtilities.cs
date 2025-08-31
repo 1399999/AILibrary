@@ -50,6 +50,25 @@ public static class TensorUtilities
         return new Tensor(new IntermediateArray(data, shape));
     }
 
+    public static float[] OnesFloat(this int[] shape)
+    {
+        int expandedShape = 1;
+
+        for (int i = 0; i < shape.Length; i++)
+        {
+            expandedShape *= shape[i];
+        }
+
+        float[] data = new float[expandedShape];
+
+        for (int i = 0; i < expandedShape; i++)
+        {
+            data[i] = 1;
+        }
+
+        return data;
+    }
+
     public static Tensor Zeros(this int[] shape)
     {
         int expandedShape = 1;
@@ -62,6 +81,20 @@ public static class TensorUtilities
         float[] data = new float[expandedShape];
 
         return new Tensor(new IntermediateArray(data, shape));
+    }
+
+    public static float[] ZerosFloat(this int[] shape)
+    {
+        int expandedShape = 1;
+
+        for (int i = 0; i < shape.Length; i++)
+        {
+            expandedShape *= shape[i];
+        }
+
+        float[] data = new float[expandedShape];
+
+        return data;
     }
 
     public static long Nelement(this Tensor tensor)

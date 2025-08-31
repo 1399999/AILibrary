@@ -498,7 +498,7 @@ public class IntermediateArray
             throw new ArgumentException();
         }
 
-        float[] output = new float[InternalData.Length / Shape[axis]];
+        float[] output = new int[] { InternalData.Length / Shape[axis] }.OnesFloat();
 
         int totalIndex = 0;
 
@@ -683,70 +683,31 @@ public class IntermediateArray
     /// If axis is null, returns the mean of all elements (scalar IntermediateArray unless keepdims=true).
     /// If axis is specified, computes the mean along that axis.
     /// </summary>
-    public IntermediateArray Mean(int axis, bool keepdims = false) // NOT REFACTORED
+    public IntermediateArray Mean(int axis, bool keepdims = false) // REFACTORED
     {
-        int ax = axis;
-        if (ax < 0 || ax >= Shape.Length)
-            throw new ArgumentException("Axis out of range.");
-
-        int axisSize = Shape[ax];
-
-        // Compute strides
-        int[] strides = ComputeStrides(Shape);
-
-        // New shape
-        int[] newShape;
-        if (keepdims)
+        if (Shape.Length <= axis)
         {
-            newShape = Shape.ToArray();
-            newShape[ax] = 1;
-        }
-        else
-        {
-            newShape = Shape.Where((_, i) => i != ax).ToArray();
+            throw new ArgumentException();
         }
 
-        float[] resultData = new float[InternalData.Length / axisSize];
+        float[] output = new float[InternalData.Length / Shape[axis]];
 
-        // Recursive iterator
-        void Recurse(int[] indices, int depth, int resultIndex)
+        int totalIndex = 0;
+
+        for (int i = 0; i < Shape[axis]; i++)
         {
-            if (depth == Shape.Length)
-                return;
-
-            if (depth == ax)
+            for (int j = 0; j < InternalData.Length / Shape[axis]; j++, totalIndex++)
             {
-                float sum = 0f;
-                for (int j = 0; j < axisSize; j++)
-                {
-                    indices[depth] = j;
-                    int flatIndex = 0;
-                    for (int k = 0; k < Shape.Length; k++)
-                        flatIndex += indices[k] * strides[k];
-                    sum += InternalData[flatIndex];
-                }
-                resultData[resultIndex] = sum / axisSize;
-                return;
-            }
-
-            for (int i = 0; i < Shape[depth]; i++)
-            {
-                indices[depth] = i;
-                int newFlat = 0, count = 0;
-
-                for (int k = 0; k < Shape.Length; k++)
-                {
-                    if (!keepdims && k == ax) continue;
-                    newFlat += indices[k] * ComputeStrides(newShape)[count++];
-                }
-
-                Recurse(indices, depth + 1, newFlat);
+                output[j] += InternalData[totalIndex];
             }
         }
 
-        Recurse(new int[Shape.Length], 0, 0);
+        for (int i = 0; i < output.Length; i++)
+        {
+            output[i] /= Shape[axis];
+        }
 
-        return new IntermediateArray(resultData, newShape);
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
     }
 
     /// <summary>
