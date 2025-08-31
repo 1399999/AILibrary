@@ -1307,82 +1307,26 @@ public class IntermediateArray
         return new IntermediateArray(new float[] { total }, new int[] { });
     }
 
-    /// <summary>
-    /// Sum along an axis (NumPy: a.sum(axis=..., keepdims=...)).
-    /// axis may be negative. keepdims retains a size-1 dimension at the reduced axis.
-    /// Empty reductions yield 0 (NumPy behavior).
-    /// </summary>
-    public IntermediateArray Sum(int dim, bool keepdims = false)
+    public IntermediateArray Sum(int dim, bool keepdims = false) // REFACTORED
     {
-        int ndim = Shape.Length;
-
-        if (ndim == 0)
+        if (Shape.Length <= dim)
         {
-            throw new InvalidOperationException("sum() not defined for a scalar with no axes.");
+            throw new ArgumentException();
         }
 
-        // Normalize axis, handles -1 axis.
-        if (dim < 0)
+        float[] output = new float[InternalData.Length / Shape[dim]];
+
+        int totalIndex = 0;
+
+        for (int i = 0; i < Shape[dim]; i++)
         {
-            dim += ndim;
-        }
-
-        if (dim < 0 || dim >= ndim)
-        {
-            throw new ArgumentException("Axis out of range.", nameof(dim));
-        }
-
-        int axisSize = Shape[dim];
-
-        // Compute outer and inner products for row-major layout
-        int outer = 1;
-
-        for (int i = 0; i < dim; i++)
-        {
-            outer *= Shape[i];
-        }
-
-        int inner = 1;
-
-        for (int i = dim + 1; i < ndim; i++)
-        {
-            inner *= Shape[i];
-        }
-
-        // Output shape
-        int[] outShape;
-
-        if (keepdims)
-        {
-            outShape = Shape.ToArray();
-            outShape[dim] = 1;
-        }
-
-        else
-        {
-            outShape = Shape.Where((_, i) => i != dim).ToArray();
-        }
-
-        float[] outData = new float[outer * inner];
-
-        // Reduce
-        for (int o = 0; o < outer; o++)
-        {
-            for (int i = 0; i < inner; i++)
+            for (int j = 0; j < InternalData.Length / Shape[dim]; j++, totalIndex++)
             {
-                float sum = 0f;
-
-                for (int a = 0; a < axisSize; a++)
-                {
-                    int idx = o * axisSize * inner + a * inner + i;
-                    sum += InternalData[idx];
-                }
-
-                outData[o * inner + i] = sum;
+                output[j] += InternalData[totalIndex];
             }
         }
 
-        return new IntermediateArray(outData, outShape);
+        return new IntermediateArray(output, Shape.RemoveItem(Shape[dim]));
     }
 
     /// <summary>

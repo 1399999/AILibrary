@@ -215,4 +215,19 @@ public static class TensorUtilities
 
         return output.Substring(0, output.Length - 2);
     }
+
+    public static int[] RemoveItem(this int[] array, int item)
+    {
+        int[] output = new int[array.Length - 1];
+
+        for (int i = 0; i < array.Length; i++)
+        {
+            if (array[i] != item)
+            {
+                output[i] = array[i];
+            }
+        }
+
+        return output;
+    }
 }
