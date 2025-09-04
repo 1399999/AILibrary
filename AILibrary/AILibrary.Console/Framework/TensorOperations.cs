@@ -1,7 +1,4 @@
-﻿using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace AILibrary.Framework;
+﻿namespace AILibrary.Framework;
 
 public class Tensor
 {
@@ -121,11 +118,7 @@ public class Tensor
     /// <param name="other"></param>
     /// <returns></returns>
     public static Tensor operator +(Tensor self, Tensor other) => new AddClass().Forward(self, other);
-
-    public static Tensor operator +(Tensor self, float other)
-    {
-        return new AddClass().Forward(self, new Tensor(other));
-    }
+    public static Tensor operator +(Tensor self, float other) => new AddClass().Forward(self, new Tensor(other));
 
     /// <summary>
     /// New = self - other
@@ -134,6 +127,8 @@ public class Tensor
     /// <param name="other"></param>
     /// <returns></returns>
     public static Tensor operator -(Tensor self, Tensor other) => self + (new Tensor((-1F).Value(self.Shape)) * other);
+    public static Tensor operator -(Tensor other) => new NegClass().Forward(other);
+
     public static Tensor operator -(Tensor self, float other)
     {
         var b = new Tensor((-1F).Value(self.Shape));
@@ -141,7 +136,6 @@ public class Tensor
 
         return self + a;
     }
-    public static Tensor operator -(Tensor other) => new NegClass().Forward(other);
 
     /// <summary>
     /// New = self * other
@@ -192,7 +186,7 @@ public class Tensor
     /// <param name="dim">Dimention to be reduced (only largest remains).</param>
     /// <param name="keepDims">Whether to broadcast result to same shape as input.</param>
     /// <returns></returns>
-    public Tensor Max(int dim = -1, bool keepdims = false) => new MaxClass().Forward(this, dim, keepdims: keepdims);
+    public Tensor Max(int? dim = null, bool keepdims = false) => new MaxClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the sum of all values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -200,7 +194,7 @@ public class Tensor
     /// <param name="dim">Dimention to be summed across.</param>
     /// <param name="keepDims">Whether to broadcast result to same shape as input.</param>
     /// <returns>Returns the sum of all values across the "dim" dimention. </returns>
-    public Tensor Sum(int dim = -1, bool keepdims = false) => new SumClass().Forward(this, dim, keepdims: keepdims);
+    public Tensor Sum(int? dim = null, bool keepdims = false) => new SumClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the mean of all values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -216,7 +210,7 @@ public class Tensor
     /// <param name="dim">Dimention the variance will be computed across</param>
     /// <param name="keepDims">Wether to broadcast result to same shape as input.</param>
     /// <returns>Returns the variance of all values across the "dim" dimention.</returns>
-    public Tensor Var(int dim = -1, bool keepdims = false) => new VarClass().Forward(this, dim, keepdims: keepdims);
+    public Tensor Var(int? dim = null, bool keepdims = false) => new VarClass().Forward(this, dim, keepdims: keepdims);
 
     /// <summary>
     /// Returns the original tensor reshaped to the new shape given. Example: (16, 8, 4), *shape =(2, 32, 8) -> (2, 32, 8).
@@ -796,12 +790,12 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public Tensor Forward(Tensor tensorA, int dim, bool keepdims)
+        public Tensor Forward(Tensor tensorA, int? dim, bool keepdims)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            var data = tensorA.Data.Sum(axis: dim, keepdims: keepdims);
+            IntermediateArray data = (dim != null) ? tensorA.Data.Sum((int)dim, keepdims: keepdims) : tensorA.Data.Sum();
 
             // Create new Tensor:
             var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
@@ -899,12 +893,13 @@ public class Tensor
         public int? cacheExtension;
         public IntermediateArray? cacheExtension2;
 
-        public Tensor Forward(Tensor tensorA, int dim, bool keepdims = false)
+        public Tensor Forward(Tensor tensorA, int? dim, bool keepdims = false)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
             // Get new Tensor's data:
-            IntermediateArray data = tensorA.Data.Max(axis: dim, keepdims: keepdims);
+
+            IntermediateArray data = (dim != null) ? tensorA.Data.Max((int)dim, keepdims: keepdims) : tensorA.Data.Max();
 
             if (keepdims)
             {
@@ -959,9 +954,9 @@ public class Tensor
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
         public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
-        public int cacheExtension;
+        public int? cacheExtension;
 
-        public Tensor Forward(Tensor tensorA, int dim, bool keepdims = false)
+        public Tensor Forward(Tensor tensorA, int? dim, bool keepdims = false)
         {
             bool requiresGrad = tensorA.RequiresGrad;
 
@@ -983,7 +978,7 @@ public class Tensor
         public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            int dim = cacheExtension;
+            int? dim = cacheExtension;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)
@@ -991,10 +986,18 @@ public class Tensor
                 // Propagate through the var(x) operation:
 
                 IntermediateArray da = a.Data.OnesLike() * dz;
-                throw new NotImplementedException();
-                //da = da * 2 * (a.Data - a.Data.Mean(axis: dim, keepdims: true)) / np.array(a.Shape)[dim].Prod();
 
-                //a.Backward(da, z);
+                if (dim != null)
+                {
+                    da = da * 2 * (a.Data - a.Data.Mean(axis: (int)dim, keepdims: true)) / a.Shape[(int)dim];
+                }
+
+                else
+                {
+                    da = da * 2 * (a.Data - a.Data.Mean()) / a.Shape[^1];
+                }
+
+                a.Backward(da, z);
             }
         }
     }
