@@ -875,9 +875,18 @@ public class Tensor
             {
                 // Propagate through the mean(x) operation:
                 var da = a.Data.OnesLike() * dz;
-                throw new NotImplementedException();
-                //da /= a.Data.ZerosLike().IndexRow(dim).Prod();
-                //a.Backward(da, z);
+
+                if (dim != null)
+                {
+                    da = da / a.Shape[(int)dim];
+                }
+
+                else
+                {
+                    da = da / a.Shape[^1];
+                }
+                
+                a.Backward(da, z);
             }
         }
     }

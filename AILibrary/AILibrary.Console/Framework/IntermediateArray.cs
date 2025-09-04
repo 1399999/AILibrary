@@ -177,6 +177,18 @@ public class IntermediateArray
         return new IntermediateArray(resultData, a.Shape);
     }
 
+    public static IntermediateArray operator /(IntermediateArray array, float scalar)
+    {
+        float[] resultData = new float[array.InternalData.Length];
+
+        for (int i = 0; i < resultData.Length; i++)
+        {
+            resultData[i] = array.InternalData[i] / scalar;
+        }
+
+        return new IntermediateArray(resultData, array.Shape);
+    }
+
     public static IntermediateArray operator /(IntermediateArray a, IntermediateArray b) => Divide(a, b);
 
     public static IntermediateArray Power(IntermediateArray a, IntermediateArray b)
