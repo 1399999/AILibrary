@@ -1,6 +1,8 @@
 ﻿// Code for demonstrational purposes:
 
-for (int i = 0; i < 100; i++)
-{
-    TrainedAIWordGenerator.GenerateWord(i);
-}
+//for (int i = 0; i < 100; i++)
+//{
+//    TrainedAIWordGenerator.GenerateWord(i);
+//}
+
+BigramRandomWordGenerator.RunExample();

@@ -1310,7 +1310,7 @@ public class Tensor
         public void Backward(IntermediateArray dz, Tensor z)
         {
             Tensor a = Cache[0];
-            IntermediateArray index = cacheExtension;
+            dynamic index = cacheExtension != null ? cacheExtension : cacheExtension2;
 
             // Find gradients relative to "a", and pass it downstream:
             if (a.RequiresGrad)

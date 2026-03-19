@@ -57,7 +57,7 @@ public class IntermediateArray
     #endregion
     #region PEMDAS Operations (Not Fully Broadcasted)
 
-    public static IntermediateArray Add(IntermediateArray a, IntermediateArray b) 
+    public static IntermediateArray Add(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
         {
@@ -76,7 +76,7 @@ public class IntermediateArray
 
     public static IntermediateArray operator +(IntermediateArray a, IntermediateArray b) => Add(a, b);
 
-    public static IntermediateArray Subtract(IntermediateArray a, IntermediateArray b) 
+    public static IntermediateArray Subtract(IntermediateArray a, IntermediateArray b)
     {
         if (!a.Shape.SequenceEqual(b.Shape))
         {
@@ -275,6 +275,24 @@ public class IntermediateArray
         return grandIndexes.Sum() + indexes[^1];
     }
 
+    private int[] DeflattenIndex(int integer, int[] shape)
+    {
+        int[] output = new int[shape.Length];
+
+        output[0] = (int)Math.Floor((double)integer / shape[0]);
+        int temp = integer % shape[0];
+
+        for (int i = 1; i < shape.Length - 1; i++)
+        {
+            output[i] = (int)Math.Floor((double)temp / shape[i]);
+            temp = integer % shape[i];
+        }
+
+        output[^1] = temp;
+
+        return output;
+    }
+
     /// <summary>
     /// Expands the index and allows for.
     /// </summary>
@@ -334,7 +352,7 @@ public class IntermediateArray
     #region Index Expansions (Fully Unrefactored)
 
     // Expand: turn flat Data into jagged float[][]…[]
-    public object GetData()
+    public object GetFullList()
     {
         int offset = 0;
         return ExpandRecursive(Shape, ref offset);
@@ -616,61 +634,168 @@ public class IntermediateArray
     }
 
     /// <summary>
-    /// NumPy-like SwapAxes function. 
-    /// Returns a new NDArray with the given axes swapped.
+    /// Returns a new IntermediateArray with the given axes swapped.
     /// </summary>
-    public IntermediateArray SwapAxes(int axis1, int axis2) // NOT REFACTORED
+    //public IntermediateArray SwapAxes(int axis1, int axis2)
+    //{
+    //    if (axis1 > Shape.Length && axis2 > Shape.Length)
+    //    {
+    //        throw new ArgumentException();
+    //    }
+
+    //    if (axis1 < 0)
+    //    {
+    //        axis1 += Shape.Length;
+    //    }
+
+    //    if (axis2 < 0)
+    //    {
+    //        axis2 += Shape.Length;
+    //    }
+
+    //    dynamic expandedArray = GetFullList();
+
+    //    int[][] indexes = new int[Shape.Length][];
+
+    //    for (int i = 0; i < Shape.Length; i++)
+    //    {
+    //        indexes[i] = new int[Shape[i]];
+
+    //        for (int j = 0; j < Shape[i]; j++)
+    //        {
+    //            indexes[i][j] = j;
+    //        }
+    //    }
+
+    //    //List<List<int>> newIndexes = new List<List<int>>();
+
+    //    //for (int i = 0; i < indexes.Length; i++)
+    //    //{
+    //    //    newIndexes.Add(new List<int>());
+
+    //    //    if (i != axis1 && i != axis2)
+    //    //    {
+    //    //        for (int j = 0; j < indexes[i].Length; j++)
+    //    //        {
+    //    //            newIndexes[i].Add(indexes[i][j]);
+    //    //        }
+    //    //    }
+
+    //    //    else if (i == axis1)
+    //    //    {
+    //    //        for (int j = 0; j < indexes[axis2].Length; j++)
+    //    //        {
+    //    //            newIndexes[i].Add(indexes[axis2][j]);
+    //    //        }
+    //    //    }
+
+    //    //    else if (i == axis2)
+    //    //    {
+    //    //        for (int j = 0; j < indexes[axis1].Length; j++)
+    //    //        {
+    //    //            newIndexes[i].Add(indexes[axis1][j]);
+    //    //        }
+    //    //    }
+    //    //}
+
+    //    for (int i = 0; i < indexes.Length; i++)
+    //    {
+    //        newIndexes.Add(new List<int>());
+
+    //        if (i != axis1 && i != axis2)
+    //        {
+    //            for (int j = 0; j < indexes[i].Length; j++)
+    //            {
+    //                newIndexes[i].Add(indexes[i][j]);
+    //            }
+    //        }
+
+    //        else if (i == axis1)
+    //        {
+    //            for (int j = 0; j < indexes[axis2].Length; j++)
+    //            {
+    //                newIndexes[i].Add(indexes[axis2][j]);
+    //            }
+    //        }
+
+    //        else if (i == axis2)
+    //        {
+    //            for (int j = 0; j < indexes[axis1].Length; j++)
+    //            {
+    //                newIndexes[i].Add(indexes[axis1][j]);
+    //            }
+    //        }
+    //    }
+
+    //    return this;
+    //}
+
+    /// <summary>
+    /// Swap two axes in an N-dimensional array (like NumPy swapaxes).
+    /// </summary>
+    public IntermediateArray SwapAxes(int axis1, int axis2)
     {
-        if (axis1 < 0 || axis1 >= Shape.Length || axis2 < 0 || axis2 >= Shape.Length)
+        int dims = Shape.Length;
+
+        if (axis1 < 0)
+        {
+            axis1 += dims;
+        }
+
+        if (axis2 < 0)
+        {
+            axis2 += dims;
+        }
+
+        if (axis1 < 0 || axis1 >= dims || axis2 < 0 || axis2 >= dims)
+        {
             throw new ArgumentException("Axis index out of range.");
+        }
 
-        if (axis1 == axis2)
-            return new IntermediateArray((float[])InternalData.Clone(), (int[])Shape.Clone());
+        var newShape = Shape;
 
-        // New shape with swapped axes
-        int[] newShape = (int[])Shape.Clone();
-        int temp = newShape[axis1];
+        var temp = newShape[axis1];
         newShape[axis1] = newShape[axis2];
         newShape[axis2] = temp;
 
-        float[] resultData = new float[InternalData.Length];
+        IntermediateArray output = Shape.Max().Replicate(Shape.Length).ZerosArray();
 
-        // Recursive index walker
-        void Recurse(int[] oldIndices, int depth, int[] strides, int[] newStrides)
+        for (int i = 0; i < InternalData.Length; i++)
         {
-            if (depth == Shape.Length)
-            {
-                // Swap indices
-                int[] newIndices = (int[])oldIndices.Clone();
-                int tmp = newIndices[axis1];
-                newIndices[axis1] = newIndices[axis2];
-                newIndices[axis2] = tmp;
-
-                int oldFlat = 0, newFlat = 0;
-                for (int i = 0; i < Shape.Length; i++)
-                {
-                    oldFlat += oldIndices[i] * strides[i];
-                    newFlat += newIndices[i] * newStrides[i];
-                }
-                resultData[newFlat] = InternalData[oldFlat];
-                return;
-            }
-
-            for (int i = 0; i < Shape[depth]; i++)
-            {
-                oldIndices[depth] = i;
-                Recurse(oldIndices, depth + 1, strides, newStrides);
-            }
+            output.InternalData[i] = InternalData[i];
         }
 
-        // Compute strides for old and new shapes
-        int[] strides = ComputeStrides(Shape);
-        int[] newStrides = ComputeStrides(newShape);
+        var newOutput = newShape.ZerosArray();
 
-        Recurse(new int[Shape.Length], 0, strides, newStrides);
+        for (int i = 0; i < InternalData.Length; i++)
+        {
+            int[] oldIndex = DeflattenIndex(i, Shape);
 
-        return new IntermediateArray(resultData, newShape);
-    } 
+            float buffer = output[oldIndex];
+            int buffer2 = oldIndex[axis1];
+
+            int[] newIndex = new int[Shape.Length];
+
+            Array.Copy(oldIndex, newIndex, Shape.Length);
+
+            if (i == 729)
+            {
+
+            }
+
+            newIndex[axis1] = newIndex[axis2];
+            newIndex[axis2] = buffer2;
+
+            output[oldIndex] = output[newIndex];
+            output[newIndex] = buffer;
+
+            //newOutput = buffer;
+        }
+
+        var a = output.Crop(newShape);
+
+        return a;
+    }
 
     public IntermediateArray Mean()
     {
@@ -1410,6 +1535,48 @@ public class IntermediateArray
         return new IntermediateArray(output);
     }
 
+    public void SetIndex(List<IntermediateArray> arrays, IntermediateArray dksjf)
+    {
+        if (arrays.Count != Shape.Length)
+        {
+            throw new Exception();
+        }
+
+        long[][] indexes = new long[arrays[0].InternalData.Length][];
+
+        for (int i = 0; i < arrays[0].InternalData.Length; i++)
+        {
+            indexes[i] = new long[arrays.Count];
+        }
+
+        for (int i = 0; i < arrays.Count; i++)
+        {
+            for (int j = 0; j < arrays[i].InternalData.Length; j++)
+            {
+                indexes[j][i] = (long)arrays[i][j];
+            }
+        }
+
+        int[] kiloIndexes = new int[indexes.Length];
+
+        for (int i = 0; i < indexes.Length; i++)
+        {
+            kiloIndexes[i] = (int)FlattenIndex(indexes[i]);
+        }
+
+        float[] output = new float[kiloIndexes.Length];
+
+        if (dksjf.InternalData.Length != output.Length)
+        {
+            throw new ArgumentException();
+        }
+
+        for (int i = 0; i < kiloIndexes.Length; i++)
+        {
+            InternalData[kiloIndexes[i]] = dksjf[i];
+        }
+    }
+
     public IntermediateArray ZerosLike() => new IntermediateArray(new float[MultiplyTotal(Shape)], Shape);
     public IntermediateArray OnesLike() => Value(1, Shape);
 
@@ -1466,6 +1633,41 @@ public class IntermediateArray
             stride *= shape[i];
         }
         return strides;
+    }
+
+    public IntermediateArray Crop(int[] values)
+    {
+        IntermediateArray output = values.ZerosArray();
+
+        bool cont = false;
+
+        for (int i = 0, k = 0; i < InternalData.Length; i++, k++)
+        {
+            cont = false;
+
+            if (i == 50)
+            {
+
+            }
+
+            int[] expandedDims = DeflattenIndex(i, Shape);
+
+            for (int j = 0; j < expandedDims.Length; j++)
+            {
+                if (expandedDims[j] >= values[j])
+                {
+                    k--;
+                    cont = true;
+                }
+            }
+
+            if (!cont)
+            {
+                output[DeflattenIndex(k, Shape)] = this[expandedDims];
+            }
+        }
+
+        return output;
     }
 
     #endregion
