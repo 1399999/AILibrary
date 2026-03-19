@@ -1,4 +1,4 @@
-﻿namespace AILibrary.Examples;
+﻿namespace AILibrary.UnrelatedExamples;
 
 public static class UntrainedAIWordGenerator
 {
