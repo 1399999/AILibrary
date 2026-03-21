@@ -19,7 +19,6 @@ public static class TrainedAIWordGenerator
 
             allWordsTemp.Add(0);
         }
-
  
         Tensor allWords = new Tensor(allWordsTemp.ToArray().Float()); // Y, Dimensions: <all words>
         int[][] blockSizeWordsTemp = new int[allWords.Data.Shape[0]][]; // X, Dimensions: <all words>x<block size>
