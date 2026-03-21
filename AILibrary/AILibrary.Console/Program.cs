@@ -2,7 +2,7 @@
 
 for (int i = 0; i < 100; i++)
 {
-    TrainedAIWordGenerator.GenerateWord(i);
+    NameGenerator.GenerateWord(i);
 }
 
 // BigramRandomWordGenerator.RunExample();

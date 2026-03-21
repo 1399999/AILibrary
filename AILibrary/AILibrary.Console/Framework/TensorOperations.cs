@@ -45,10 +45,20 @@ public class Tensor
         }
     }
 
-    public override string ToString()
-    {
-        return $"Tensor(Shape: ({Shape.ListToString()}))";
-    }
+    /// <summary>
+    /// Prints out the data of the tensor.
+    /// </summary>
+    public override string ToString() => Data.ToString();
+
+    /// <summary>
+    /// Prints out the data of the tensor.
+    /// </summary>
+    public string Print() => Data.ToString();
+
+    /// <summary>
+    /// Prints out the data of the tensor selectively.
+    /// </summary>
+    public string Print(int startIndex, int endIndex) => Data.Select(startIndex, endIndex).ToString();
 
     /// <summary>
     /// Performs the backpropagation with gradient descent from current tensor. Will fill every tensor's "grad" attribute with gradients relative to the current Tensor.

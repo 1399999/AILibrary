@@ -1,6 +1,6 @@
 ﻿namespace AILibrary.Examples;
 
-public static class TrainedAIWordGenerator
+public static class NameGenerator
 {
     static int BLOCK_SIZE = 3;
 
@@ -10,7 +10,7 @@ public static class TrainedAIWordGenerator
 
         List<int> allWordsTemp = new List<int>();
 
-        for (int i = 0; i < words.Length && i < 5; i++)
+        for (int i = 0; i < words.Length; i++)
         {
             for (int j = 0; j < words[i].Length; j++)
             {
@@ -23,11 +23,13 @@ public static class TrainedAIWordGenerator
         Tensor allWords = new Tensor(allWordsTemp.ToArray().Float()); // Y, Dimensions: <all words>
         int[][] blockSizeWordsTemp = new int[allWords.Data.Shape[0]][]; // X, Dimensions: <all words>x<block size>
 
+        Console.WriteLine(allWords.Print(0, 8));
+
         // Building the dataset
 
         int l = 0;
 
-        for (int i = 0; i < words.Length && i < 5; i++)
+        for (int i = 0; i < words.Length; i++)
         {
             string word = string.Empty;
 

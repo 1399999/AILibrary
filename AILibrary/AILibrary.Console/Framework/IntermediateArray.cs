@@ -1,4 +1,6 @@
-﻿namespace AILibrary.Framework;
+﻿using System.Text;
+
+namespace AILibrary.Framework;
 
 public class IntermediateArray
 {
@@ -1669,6 +1671,99 @@ public class IntermediateArray
 
         return output;
     }
+
+    #endregion
+    #region Debug Functions
+
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        sb.Append("tensor(");
+        FormatRecursive(sb, 0, new int[Shape.Length], 0);
+        sb.Append(")");
+        return sb.ToString();
+    }
+
+    private void FormatRecursive(StringBuilder sb, int dim, int[] indices, int depth)
+    {
+        if (dim == Shape.Length)
+        {
+            // Base case: we've reached a scalar element
+            int flatIndex = GetFlatIndex(indices);
+            float val = InternalData[flatIndex];
+
+            sb.Append(val);
+            return;
+        }
+
+        sb.Append("[");
+
+        for (int i = 0; i < Shape[dim]; i++)
+        {
+            indices[dim] = i;
+
+            if (i > 0)
+            {
+                sb.Append(",");
+
+                // For dimensions beyond the last, add newlines + indentation
+                if (dim < Shape.Length - 1)
+                {
+                    sb.AppendLine();
+                    sb.Append(' ', depth + 8 + dim); // "tensor(" = 7 chars + 1
+                }
+                else
+                {
+                    sb.Append(" ");
+                }
+            }
+
+            FormatRecursive(sb, dim + 1, indices, depth);
+        }
+
+        sb.Append("]");
+    }
+
+    private int GetFlatIndex(int[] indices)
+    {
+        int flatIndex = 0;
+        int stride = 1;
+
+        for (int i = Shape.Length - 1; i >= 0; i--)
+        {
+            flatIndex += indices[i] * stride;
+            stride *= Shape[i];
+        }
+
+        return flatIndex;
+    }
+
+    public IntermediateArray Select(int? startIndex = null, int? endIndex = null)
+    {
+        // Resolve null to defaults: start=0, end=full length
+        int start = startIndex.HasValue ? WrapIndex(startIndex.Value, Shape[0]) : 0;
+        int end = endIndex.HasValue ? WrapIndex(endIndex.Value, Shape[0]) : Shape[0];
+
+        // Clamp to valid bounds
+        start = Math.Clamp(start, 0, Shape[0]);
+        end = Math.Clamp(end, 0, Shape[0]);
+
+        int sliceLength = Math.Max(0, end - start);
+
+        // Compute new shape: only the first dimension changes
+        int[] newShape = (int[])Shape.Clone();
+        newShape[0] = sliceLength;
+
+        // How many elements per "row" (all dims except the first)
+        int innerSize = InternalData.Length / Shape[0];
+
+        float[] newData = new float[sliceLength * innerSize];
+        Array.Copy(InternalData, start * innerSize, newData, 0, sliceLength * innerSize);
+
+        return new IntermediateArray(newData, newShape);
+    }
+
+    private static int WrapIndex(int index, int dimSize) => index < 0 ? dimSize + index : index;
 
     #endregion
 }
