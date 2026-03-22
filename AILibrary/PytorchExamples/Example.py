@@ -51,12 +51,12 @@ Xtr, Ytr = build_dataset(words[:n1])
 Xdev, Ydev = build_dataset(words[n1:n2])
 Xte, Yte = build_dataset(words[n2:])
 
-print(Xtr[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  5], [ 0,  5, 13], [ 5, 13, 13], [13, 13,  1], [ 0,  0,  0], [ 0,  0, 15], [ 0, 15, 12]])
-print(Ytr[:8]) # tensor([ 5, 13, 13,  1,  0, 15, 12,  9])
-print(Xdev[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0, 1, 13], [ 1, 13, 18], [13, 18, 15], [18, 15, 13], [ 0,  0,  0], [ 0,  0,  1]])
-print(Ydev[:8]) # tensor([ 1, 13, 18, 15, 13,  0,  1, 14]) 
-print(Xte[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18], [ 1, 18,  9], [18,  9,  2], [ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18]])
-print(Yte[:8]) # tensor([ 1, 18,  9,  2,  0,  1, 18,  9])
+# print(Xtr[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  5], [ 0,  5, 13], [ 5, 13, 13], [13, 13,  1], [ 0,  0,  0], [ 0,  0, 15], [ 0, 15, 12]])
+# print(Ytr[:8]) # tensor([ 5, 13, 13,  1,  0, 15, 12,  9])
+# print(Xdev[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0, 1, 13], [ 1, 13, 18], [13, 18, 15], [18, 15, 13], [ 0,  0,  0], [ 0,  0,  1]])
+# print(Ydev[:8]) # tensor([ 1, 13, 18, 15, 13,  0,  1, 14]) 
+# print(Xte[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18], [ 1, 18,  9], [18,  9,  2], [ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18]])
+# print(Yte[:8]) # tensor([ 1, 18,  9,  2,  0,  1, 18,  9])
 
 g = torch.Generator().manual_seed(2147483647) # for reproducibility
 C = torch.randn((27, 10), generator=g)
@@ -65,6 +65,18 @@ b1 = torch.randn(200, generator=g)
 W2 = torch.randn((200, 27), generator=g)
 b2 = torch.randn(27, generator=g)
 parameters = [C, W1, b1, W2, b2]
+
+for i in range(1):
+    temp = []
+    for j in range(27):
+        temp.append(str(b2[j].data)[7:-1])
+    print(', '.join(temp))
+
+#print(C) # tensor([[ 0,  0,  0], [ 0,  0,  5], [ 0,  5, 13], [ 5, 13, 13], [13, 13,  1], [ 0,  0,  0], [ 0,  0, 15], [ 0, 15, 12]])
+#print(W1) # tensor([ 5, 13, 13,  1,  0, 15, 12,  9])
+#print(b1) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0, 1, 13], [ 1, 13, 18], [13, 18, 15], [18, 15, 13], [ 0,  0,  0], [ 0,  0,  1]])
+#print(W2) # tensor([ 1, 13, 18, 15, 13,  0,  1, 14]) 
+#print(b2) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18], [ 1, 18,  9], [18,  9,  2], [ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18]])
 
 # print(sum(p.nelement() for p in parameters)) # number of parameters in total # 11897
 

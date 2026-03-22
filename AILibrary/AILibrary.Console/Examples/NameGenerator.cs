@@ -28,27 +28,32 @@ public static class NameGenerator
         Tensor xte = tempTe.Item1; 
         Tensor yte = tempTe.Item2;
 
-        Console.WriteLine(xtr.Print(0, 8)); // CORRECT
-        Console.WriteLine(ytr.Print(0, 8)); // CORRECT
-        Console.WriteLine(xdev.Print(0, 8)); // CORRECT
-        Console.WriteLine(ydev.Print(0, 8)); // CORRECT
-        Console.WriteLine(xte.Print(0, 8)); // CORRECT
-        Console.WriteLine(yte.Print(0, 8)); // CORRECT
+        //Console.WriteLine(xtr.Print(0, 8)); // CORRECT
+        //Console.WriteLine(ytr.Print(0, 8)); // CORRECT
+        //Console.WriteLine(xdev.Print(0, 8)); // CORRECT
+        //Console.WriteLine(ydev.Print(0, 8)); // CORRECT
+        //Console.WriteLine(xte.Print(0, 8)); // CORRECT
+        //Console.WriteLine(yte.Print(0, 8)); // CORRECT
 
-        //Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, seed); // C
-        ////Tensor neuralNet = new Tensor(new IntermediateArray(SystemModel.NeuralNet));
+        //Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 10, true, seed); // C
+        Tensor neuralNet = new Tensor(new IntermediateArray(SystemModel.NeuralNet)); // C
 
-        //var weights1 = RandomNeuron.CreateRandomNeurons(BLOCK_SIZE * 2, 100, true, seed); // W1
-        //var biases1 = RandomNeuron.CreateRandomNeurons(100, true, seed); // b1
-        //var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, seed); // W2
-        //var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, seed); // b2 
-        ////var weights1 = new Tensor(SystemModel.Weights1);
-        ////var biases1 = new Tensor(SystemModel.Biases1);
-        ////var weights2 = new Tensor(SystemModel.Weights2);
-        ////var biases2 = new Tensor(SystemModel.Biases2);
+        //Tensor weights1 = RandomNeuron.CreateRandomNeurons(30, 200, true, seed); // W1
+        //Tensor biases1 = RandomNeuron.CreateRandomNeurons(200, true, seed); // b1
+        //Tensor weights2 = RandomNeuron.CreateRandomNeurons(200, SystemModel.Alphabet.Length, true, seed); // W2
+        //Tensor biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, seed); // b2 
+        Tensor weights1 = new Tensor(SystemModel.Weights1); // W1
+        Tensor biases1 = new Tensor(SystemModel.Biases1); // b1
+        Tensor weights2 = new Tensor(SystemModel.Weights2); // W2
+        Tensor biases2 = new Tensor(SystemModel.Biases2); // b2
+
+        Console.WriteLine(weights1.Print(0, 8));
+        Console.WriteLine(biases1.Print(0, 8));
+        Console.WriteLine(weights2.Print(0, 8));
+        Console.WriteLine(biases2.Print(0, 8));
 
         //long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
-        ////Console.WriteLine(paramaters);
+        //Console.WriteLine(paramaters); // CORRECT
 
         //var emb = blockSizeWords.IndexInto(neuralNet.Data);
         //var kiloList = emb.Reshape([-1, 6]);
