@@ -1,4 +1,7 @@
-﻿namespace AILibrary.Examples;
+﻿using System;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace AILibrary.Examples;
 
 public static class NameGenerator
 {
@@ -8,6 +11,67 @@ public static class NameGenerator
     {
         string[] words = File.ReadAllLines("C:\\AITrainingSets\\Names.txt");
 
+        //Console.WriteLine(blockSizeWords.Print(0, 8)); // X, CORRECT
+        //Console.WriteLine(allWords.Print(0, 8)); // Y, CORRECT
+
+        int n1 = (int)(0.8D * words.Length);
+        int n2 = (int)(0.9D * words.Length);
+
+        var tempTr = BuildDataset(words[0..n1]);
+        var tempDev = BuildDataset(words[n1..n2]);
+        var tempTe = BuildDataset(words[n2..]);
+
+        Tensor xtr = tempTr.Item1; 
+        Tensor ytr = tempTr.Item2;
+        Tensor xdev = tempDev.Item1; 
+        Tensor ydev = tempDev.Item2;
+        Tensor xte = tempTe.Item1; 
+        Tensor yte = tempTe.Item2;
+
+        Console.WriteLine(xtr.Print(0, 8)); // CORRECT
+        Console.WriteLine(ytr.Print(0, 8)); // CORRECT
+        Console.WriteLine(xdev.Print(0, 8)); // CORRECT
+        Console.WriteLine(ydev.Print(0, 8)); // CORRECT
+        Console.WriteLine(xte.Print(0, 8)); // CORRECT
+        Console.WriteLine(yte.Print(0, 8)); // CORRECT
+
+        //Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, seed); // C
+        ////Tensor neuralNet = new Tensor(new IntermediateArray(SystemModel.NeuralNet));
+
+        //var weights1 = RandomNeuron.CreateRandomNeurons(BLOCK_SIZE * 2, 100, true, seed); // W1
+        //var biases1 = RandomNeuron.CreateRandomNeurons(100, true, seed); // b1
+        //var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, seed); // W2
+        //var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, seed); // b2 
+        ////var weights1 = new Tensor(SystemModel.Weights1);
+        ////var biases1 = new Tensor(SystemModel.Biases1);
+        ////var weights2 = new Tensor(SystemModel.Weights2);
+        ////var biases2 = new Tensor(SystemModel.Biases2);
+
+        //long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
+        ////Console.WriteLine(paramaters);
+
+        //var emb = blockSizeWords.IndexInto(neuralNet.Data);
+        //var kiloList = emb.Reshape([-1, 6]);
+        //var megaList = kiloList.Matmul(weights1);
+        //var gigaList = megaList + biases1;
+        //var tanhList = gigaList.Tanh(); // h
+
+        //var tempLogits = tanhList.Matmul(weights2);
+        //var logits = tempLogits + biases2;
+        //Tensor loss = logits.CrossEntropy(allWords.Data);
+
+        //loss.Backward();
+
+        //////weights1 = weights1 - (weights1.Grad * 0.01F);
+        //////weights2 = weights2 - (weights2.Grad * 0.01F);
+
+        ////loss.ZeroGradTree();
+
+        //Console.WriteLine(loss.Data.InternalData[0]);
+    }
+
+    static (Tensor, Tensor) BuildDataset(string[] words)
+    {
         List<int> allWordsTemp = new List<int>();
 
         for (int i = 0; i < words.Length; i++)
@@ -19,13 +83,10 @@ public static class NameGenerator
 
             allWordsTemp.Add(0);
         }
- 
+
         Tensor allWords = new Tensor(allWordsTemp.ToArray().Float()); // Y, Dimensions: <all words>
-        int[][] blockSizeWordsTemp = new int[allWords.Data.Shape[0]][]; // X, Dimensions: <all words>x<block size>
 
-        Console.WriteLine(allWords.Print(0, 8));
-
-        // Building the dataset
+        int[][] blockSizeWordsTemp = new int[allWords.Data.Shape[0]][];
 
         int l = 0;
 
@@ -52,40 +113,8 @@ public static class NameGenerator
             }
         }
 
-        Tensor blockSizeWords = new Tensor(blockSizeWordsTemp.Float());
+        Tensor blockSizeWords = new Tensor(blockSizeWordsTemp.Float()); // X, Dimensions: <all words>x<block size>
 
-        Tensor neuralNet = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, 2, true, seed); // C
-        //Tensor neuralNet = new Tensor(new IntermediateArray(SystemModel.NeuralNet));
-
-        var weights1 = RandomNeuron.CreateRandomNeurons(BLOCK_SIZE * 2, 100, true, seed); // W1
-        var biases1 = RandomNeuron.CreateRandomNeurons(100, true, seed); // b1
-        var weights2 = RandomNeuron.CreateRandomNeurons(100, SystemModel.Alphabet.Length, true, seed); // W2
-        var biases2 = RandomNeuron.CreateRandomNeurons(SystemModel.Alphabet.Length, true, seed); // b2 
-        //var weights1 = new Tensor(SystemModel.Weights1);
-        //var biases1 = new Tensor(SystemModel.Biases1);
-        //var weights2 = new Tensor(SystemModel.Weights2);
-        //var biases2 = new Tensor(SystemModel.Biases2);
-
-        long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
-        //Console.WriteLine(paramaters);
-
-        var emb = blockSizeWords.IndexInto(neuralNet.Data);
-        var kiloList = emb.Reshape([-1, 6]);
-        var megaList = kiloList.Matmul(weights1);
-        var gigaList = megaList + biases1;
-        var tanhList = gigaList.Tanh(); // h
-
-        var tempLogits = tanhList.Matmul(weights2);
-        var logits = tempLogits + biases2;
-        Tensor loss = logits.CrossEntropy(allWords.Data);
-
-        loss.Backward();
-
-        ////weights1 = weights1 - (weights1.Grad * 0.01F);
-        ////weights2 = weights2 - (weights2.Grad * 0.01F);
-
-        //loss.ZeroGradTree();
-
-        Console.WriteLine(loss.Data.InternalData[0]);
+        return (blockSizeWords, allWords);
     }
 }

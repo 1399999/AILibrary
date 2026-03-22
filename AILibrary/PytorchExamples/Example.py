@@ -41,9 +41,9 @@ def build_dataset(words):
   # print(X.shape, Y.shape) # torch.Size([228146, 3]) torch.Size([228146])
   return X, Y
 
-import random
-random.seed(42)
-random.shuffle(words)
+# import random
+# random.seed(42)
+# random.shuffle(words)
 n1 = int(0.8*len(words))
 n2 = int(0.9*len(words))
 
@@ -51,12 +51,12 @@ Xtr, Ytr = build_dataset(words[:n1])
 Xdev, Ydev = build_dataset(words[n1:n2])
 Xte, Yte = build_dataset(words[n2:])
 
-# print(Xtr[:8]) # tensor([[ 0,  0,  0], [ 0,  0, 25], [ 0, 25, 21], [25, 21,  8], [21,  8,  5], [ 8,  5, 14], [ 5, 14,  7], [ 0,  0,  0]])
-# print(Ytr[:8]) # tensor([25, 21,  8,  5, 14,  7,  0,  4])
-# print(Xdev[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 13], [ 1, 13,  1], [13,  1, 25], [ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 25]])
-# print(Ydev[:8]) # tensor([ 1, 13,  1, 25,  0,  1, 25, 20])
-# print(Xte[:8]) # tensor([[ 0,  0,  0], [ 0,  0, 13], [ 0, 13, 21], [13, 21, 19], [21, 19, 20], [19, 20,  1], [20,  1,  6], [ 1,  6,  1]])
-# print(Yte[:8]) # tensor([13, 21, 19, 20,  1,  6,  1,  0])
+print(Xtr[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  5], [ 0,  5, 13], [ 5, 13, 13], [13, 13,  1], [ 0,  0,  0], [ 0,  0, 15], [ 0, 15, 12]])
+print(Ytr[:8]) # tensor([ 5, 13, 13,  1,  0, 15, 12,  9])
+print(Xdev[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0, 1, 13], [ 1, 13, 18], [13, 18, 15], [18, 15, 13], [ 0,  0,  0], [ 0,  0,  1]])
+print(Ydev[:8]) # tensor([ 1, 13, 18, 15, 13,  0,  1, 14]) 
+print(Xte[:8]) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18], [ 1, 18,  9], [18,  9,  2], [ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18]])
+print(Yte[:8]) # tensor([ 1, 18,  9,  2,  0,  1, 18,  9])
 
 g = torch.Generator().manual_seed(2147483647) # for reproducibility
 C = torch.randn((27, 10), generator=g)
