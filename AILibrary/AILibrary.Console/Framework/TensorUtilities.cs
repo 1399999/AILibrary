@@ -325,4 +325,22 @@ public static class TensorUtilities
 
         return output;
     }
+
+    public static Tensor Linspace(int num1, int num2, int totalElements)
+    {
+        float[] output = new float[totalElements + 1];
+
+        int diff = num2 - num1;
+
+        float j = 0;
+
+        for (int i = 0; i < totalElements; i++, j += (float)diff / (float)totalElements)
+        {
+            output[i] = num1 + j;
+        }
+
+        output[^1] = num2;
+
+        return new Tensor(output);
+    }
 }

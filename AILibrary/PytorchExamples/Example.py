@@ -66,17 +66,17 @@ W2 = torch.randn((200, 27), generator=g)
 b2 = torch.randn(27, generator=g)
 parameters = [C, W1, b1, W2, b2]
 
-for i in range(1):
-    temp = []
-    for j in range(27):
-        temp.append(str(b2[j].data)[7:-1])
-    print(', '.join(temp))
+# for i in range(1):
+#     temp = []
+#     for j in range(27):
+#         temp.append(str(b2[j].data)[7:-1])
+#     print(', '.join(temp))
 
-#print(C) # tensor([[ 0,  0,  0], [ 0,  0,  5], [ 0,  5, 13], [ 5, 13, 13], [13, 13,  1], [ 0,  0,  0], [ 0,  0, 15], [ 0, 15, 12]])
-#print(W1) # tensor([ 5, 13, 13,  1,  0, 15, 12,  9])
-#print(b1) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0, 1, 13], [ 1, 13, 18], [13, 18, 15], [18, 15, 13], [ 0,  0,  0], [ 0,  0,  1]])
-#print(W2) # tensor([ 1, 13, 18, 15, 13,  0,  1, 14]) 
-#print(b2) # tensor([[ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18], [ 1, 18,  9], [18,  9,  2], [ 0,  0,  0], [ 0,  0,  1], [ 0,  1, 18]])
+#print(C[0]) # tensor([ 1.5674, -0.2373, -0.0274, -1.1008,  0.2859, -0.0296, -1.5471,  0.6049, 0.0791,  0.9046])
+#print(W1[0]) # tensor([-1.1707,  0.0719, -1.8493,  0.9109, -0.9936,  0.6019, -0.1089,  0.5259, -0.6117,  0.5482, -0.2568, -1.5437,  0.3795, -1.7705, -1.2085,  0.9477, ...
+#print(b1[0]) # tensor(-2.0705)
+#print(W2[0]) # tensor([ 0.7263,  1.4949, -1.5009, -1.8036, -0.0883, -2.2750, -0.2859,  1.4241, 0.3239,  0.3597,  0.4867,  0.1123, -0.5226, -0.0696, -1.3980,  0.8060, ...
+#print(b2[0]) # tensor(0.1373)
 
 # print(sum(p.nelement() for p in parameters)) # number of parameters in total # 11897
 
@@ -88,3 +88,41 @@ lre = torch.linspace(-3, 0, 1000)
 # print(lre[:8]) # tensor([-3.0000, -2.9970, -2.9940, -2.9910, -2.9880, -2.9850, -2.9820, -2.9790])
 
 lrs = 10**lre
+
+print(lrs) # tensor([0.0010, 0.0010, 0.0010, 0.0010, 0.0010, 0.0010, 0.0010, 0.0010, 0.0011])
+
+# lri = []
+# lossi = []
+# stepi = []
+
+# for i in range(1):
+  
+#   # minibatch construct
+#   ix = torch.randint(0, Xtr.shape[0], (32,))
+
+#   print(ix)
+  
+#   # forward pass
+#   emb = C[Xtr[ix]] # (32, 3, 10)
+#   h = torch.tanh(emb.view(-1, 30) @ W1 + b1) # (32, 200)
+#   logits = h @ W2 + b2 # (32, 27)
+#   loss = F.cross_entropy(logits, Ytr[ix])
+#   #print(loss.item())
+  
+#   # backward pass
+#   for p in parameters:
+#     p.grad = None
+#   loss.backward()
+  
+#   # update
+#   #lr = lrs[i]
+#   lr = 0.1 if i < 100000 else 0.01
+#   for p in parameters:
+#     p.data += -lr * p.grad
+
+#   # track stats
+#   #lri.append(lre[i])
+#   stepi.append(i)
+#   lossi.append(loss.log10().item())
+
+# #print(loss.item())

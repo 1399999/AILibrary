@@ -1,11 +1,9 @@
-﻿using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace AILibrary.Examples;
+﻿namespace AILibrary.Examples;
 
 public static class NameGenerator
 {
     static int BLOCK_SIZE = 3;
+    static int STEP_SIZE = 1;
 
     public static void GenerateWord(int seed = int.MaxValue)
     {
@@ -47,13 +45,25 @@ public static class NameGenerator
         Tensor weights2 = new Tensor(SystemModel.Weights2); // W2
         Tensor biases2 = new Tensor(SystemModel.Biases2); // b2
 
-        Console.WriteLine(weights1.Print(0, 8));
-        Console.WriteLine(biases1.Print(0, 8));
-        Console.WriteLine(weights2.Print(0, 8));
-        Console.WriteLine(biases2.Print(0, 8));
+        //Console.WriteLine(weights1.Print(0, 1)); // CORRECT
+        //Console.WriteLine(biases1.Print(0, 1)); // CORRECT
+        //Console.WriteLine(weights2.Print(0, 1)); // CORRECT
+        //Console.WriteLine(biases2.Print(0, 1)); // CORRECT
 
         //long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
         //Console.WriteLine(paramaters); // CORRECT
+
+        Tensor lre = TensorUtilities.Linspace(-3, 0, 1000);
+
+        //Console.WriteLine(lre.Print(0, 8)); // CORRECT
+
+        Tensor lrs = new Tensor(10) ^ lre;
+
+        // Console.WriteLine(lrs.Print(0, 8)); // CORRECT
+
+        var lri = new int[STEP_SIZE];
+        var lossi = new float[STEP_SIZE];
+        var stepi = new int[STEP_SIZE];
 
         //var emb = blockSizeWords.IndexInto(neuralNet.Data);
         //var kiloList = emb.Reshape([-1, 6]);
