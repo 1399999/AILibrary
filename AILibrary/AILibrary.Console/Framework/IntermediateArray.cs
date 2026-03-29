@@ -1672,6 +1672,20 @@ public class IntermediateArray
         return output;
     }
 
+    public static IntermediateArray RandInt(int low, int high, params int[] shape)
+    {
+        int totalElements = shape.Aggregate(1, (a, b) => a * b);
+        float[] data = new float[totalElements];
+        Random rng = new Random();
+
+        for (int i = 0; i < totalElements; i++)
+        {
+            data[i] = rng.Next(low, high);
+        }
+
+        return new IntermediateArray(data: data, shape: shape);
+    }
+
     #endregion
     #region Debug Functions
 

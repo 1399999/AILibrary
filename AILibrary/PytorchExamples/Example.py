@@ -91,38 +91,38 @@ lrs = 10**lre
 
 print(lrs) # tensor([0.0010, 0.0010, 0.0010, 0.0010, 0.0010, 0.0010, 0.0010, 0.0010, 0.0011])
 
-# lri = []
-# lossi = []
-# stepi = []
+lri = []
+lossi = []
+stepi = []
 
-# for i in range(1):
+for i in range(1):
   
-#   # minibatch construct
-#   ix = torch.randint(0, Xtr.shape[0], (32,))
+  # minibatch construct
+  ix = torch.randint(0, Xtr.shape[0], (32,))
 
-#   print(ix)
+  print(ix)
   
-#   # forward pass
-#   emb = C[Xtr[ix]] # (32, 3, 10)
-#   h = torch.tanh(emb.view(-1, 30) @ W1 + b1) # (32, 200)
-#   logits = h @ W2 + b2 # (32, 27)
-#   loss = F.cross_entropy(logits, Ytr[ix])
-#   #print(loss.item())
+  # forward pass
+  emb = C[Xtr[ix]] # (32, 3, 10)
+  h = torch.tanh(emb.view(-1, 30) @ W1 + b1) # (32, 200)
+  logits = h @ W2 + b2 # (32, 27)
+  loss = F.cross_entropy(logits, Ytr[ix])
+  #print(loss.item())
   
-#   # backward pass
-#   for p in parameters:
-#     p.grad = None
-#   loss.backward()
+  # backward pass
+  for p in parameters:
+    p.grad = None
+  loss.backward()
   
-#   # update
-#   #lr = lrs[i]
-#   lr = 0.1 if i < 100000 else 0.01
-#   for p in parameters:
-#     p.data += -lr * p.grad
+  # update
+  #lr = lrs[i]
+  lr = 0.1 if i < 100000 else 0.01
+  for p in parameters:
+    p.data += -lr * p.grad
 
-#   # track stats
-#   #lri.append(lre[i])
-#   stepi.append(i)
-#   lossi.append(loss.log10().item())
+  # track stats
+  #lri.append(lre[i])
+  stepi.append(i)
+  lossi.append(loss.log10().item())
 
-# #print(loss.item())
+print(loss.item())

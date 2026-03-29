@@ -5,10 +5,7 @@ VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AILibrary", "AILibrary.Console\AILibrary.csproj", "{3AE80BF9-1068-4CD9-B5DE-EFC9DA7A9163}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PytorchExamples", "PytorchExamples", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		Example.py = Example.py
-	EndProjectSection
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PytorchExamples", "PytorchExamples\PytorchExamples.pyproj", "{44956CBA-1B10-40E2-8489-4EB62C8D03EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +17,8 @@ Global
 		{3AE80BF9-1068-4CD9-B5DE-EFC9DA7A9163}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AE80BF9-1068-4CD9-B5DE-EFC9DA7A9163}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3AE80BF9-1068-4CD9-B5DE-EFC9DA7A9163}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44956CBA-1B10-40E2-8489-4EB62C8D03EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44956CBA-1B10-40E2-8489-4EB62C8D03EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

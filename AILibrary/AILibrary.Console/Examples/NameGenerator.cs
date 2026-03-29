@@ -59,11 +59,20 @@ public static class NameGenerator
 
         Tensor lrs = new Tensor(10) ^ lre;
 
-        // Console.WriteLine(lrs.Print(0, 8)); // CORRECT
+        //Console.WriteLine(lrs.Print(0, 8)); // CORRECT
 
         var lri = new int[STEP_SIZE];
         var lossi = new float[STEP_SIZE];
         var stepi = new int[STEP_SIZE];
+
+        for (int i = 0; i < 1; i++)
+        {
+            // minibatch construct
+
+            //Tensor ix = new Tensor(IntermediateArray.RandInt(0, xtr.Shape[0], new int[] { 32 }));
+            Tensor ix = new Tensor(SystemModel.Ix);
+            //Console.WriteLine(ix); // CORRECT
+        }
 
         //var emb = blockSizeWords.IndexInto(neuralNet.Data);
         //var kiloList = emb.Reshape([-1, 6]);
