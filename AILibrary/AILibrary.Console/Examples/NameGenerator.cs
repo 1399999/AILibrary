@@ -77,6 +77,29 @@ public static class NameGenerator
             Tensor emb = neuralNet[xtr[ix]]; // (32, 3, 10)
             //Console.WriteLine(xtr[ix]); // CORRECT
             //Console.WriteLine(emb); // CORRECT
+
+            Tensor temp = emb.Reshape([-1, 30]);
+            //Console.WriteLine(temp); // CORRECT
+
+            Tensor temp2 = temp.Matmul(weights1);
+            //Console.WriteLine(temp2); // CORRECT
+
+            Tensor temp3 = temp2 + biases1;
+            //Console.WriteLine(temp3); // CORRECT
+
+            Tensor h = temp3.Tanh();
+            //Console.WriteLine(temp4); // CORRECT
+
+            var tempLogits = h.Matmul(weights2);
+            //Console.WriteLine(tempLogits); // CORRECT
+
+            var logits = tempLogits + biases2;
+            //Console.WriteLine(logits); // CORRECT
+
+            //Console.WriteLine(ytr[ix]); // CORRECT
+
+            Tensor loss = logits.CrossEntropy(ytr[ix]);
+            Console.WriteLine(loss);
         }
 
         //var emb = blockSizeWords.IndexInto(neuralNet.Data);

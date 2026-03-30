@@ -1686,28 +1686,46 @@ public class IntermediateArray
 
     public static IntermediateArray Lookup(IntermediateArray embeddingTable, IntermediateArray indices)
     {
-        // embeddingTable:       [vocabSize, embedDim]
-        // indices: [any shape...]
-        // output:  [indices.Shape..., embedDim]
+        List<float> output = new();
 
-        int embedDim = embeddingTable.Shape[1];
-        int numIndices = indices.InternalData.Length;
+        int multiplier = 1;
 
-        // new shape = indices.Shape + [embedDim]
-        int[] newShape = indices.Shape.Append(embedDim).ToArray();
-
-        float[] newData = new float[numIndices * embedDim];
-
-        for (int i = 0; i < numIndices; i++)
+        for (int j = 1; j < embeddingTable.Shape.Length; j++)
         {
-            int idx = (int)indices.InternalData[i];
-            int srcOffset = idx * embedDim;
-            int dstOffset = i * embedDim;
-
-            Array.Copy(embeddingTable.InternalData, srcOffset, newData, dstOffset, embedDim);
+            multiplier *= embeddingTable.Shape[j];
         }
 
-        return new IntermediateArray(shape: newShape, data: newData);
+        int multiplierIndices = 1;
+
+        for (int j = 0; j < indices.Shape.Length; j++)
+        {
+            multiplierIndices *= indices.Shape[j];
+        }
+
+        for (int i = 0; i < multiplierIndices; i++)
+        {
+            int firstSelected = (int)indices[i] * multiplier;
+            int lastSelected = firstSelected + multiplier - 1;
+
+            for (int j = firstSelected; j <= lastSelected; j++)
+            {
+                output.Add(embeddingTable.InternalData[j]);
+            }
+        }
+
+        List<int> newShape = new();
+
+        for (int i = 0; i < indices.Shape.Length; i++)
+        {
+            newShape.Add(indices.Shape[i]);
+        }
+
+        for (int i = 1; i < embeddingTable.Shape.Length; i++)
+        {
+            newShape.Add(embeddingTable.Shape[i]);
+        }
+
+        return new IntermediateArray(output.ToArray(), newShape.ToArray());
     }
 
     #endregion

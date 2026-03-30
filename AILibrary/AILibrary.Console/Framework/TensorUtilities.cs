@@ -148,6 +148,18 @@ public static class TensorUtilities
         return -ijkl;
     }
 
+    public static Tensor CrossEntropy(this Tensor logits, Tensor labels)
+    {
+        var counts = logits.Exp();
+        var prob = counts / counts.Sum(1, keepdims: true);
+
+        var abcd = prob[[ArangeInt(32), labels.Data]];
+        var efgh = abcd.Log();
+        var ijkl = efgh.Mean();
+
+        return -ijkl;
+    }
+
     public static IntermediateArray ArangeInt(this int ender) // 0 -> ender
     {
         float[] ints = new float[ender];
