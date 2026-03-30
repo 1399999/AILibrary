@@ -188,7 +188,7 @@ public class Tensor
     /// <param name="self"></param>
     /// <param name="other"></param>
     /// <returns></returns>
-    public Tensor IndexInto(IntermediateArray index) => new SliceClass().Forward(this, index);
+    public Tensor Slice(IntermediateArray index) => new SliceClass().Forward(this, index);
 
     /// <summary>
     /// Returns the largest values across the "dim" dimention. Example: (B, T, D), dim = 1 -> (B, D).
@@ -266,6 +266,11 @@ public class Tensor
     public Tensor this[List<IntermediateArray> array]
     {
         get => new SliceClass().Forward(this, array);
+    }
+
+    public Tensor this[Tensor tensor]
+    {
+        get => new IndexIntoClass().Forward(this, tensor);
     }
 
     private class AddClass()
@@ -1328,6 +1333,73 @@ public class Tensor
                 // Add upstream gradients to [index] part of da.
                 IntermediateArray da = a.Data.ZerosLike();
                 da.SetIndex(index, dz);
+
+                a.Backward(da, z);
+            }
+        }
+    }
+
+    private class IndexIntoClass()
+    {
+        public List<Tensor> Parents { get; set; } = new List<Tensor>();
+        public Tensor? Cache { get; set; }
+
+        public Tensor Forward(Tensor tensorA, Tensor indices)
+        {
+            bool requiresGrad = tensorA.RequiresGrad;
+
+            // Get new Tensor's data:
+            IntermediateArray data = IntermediateArray.Lookup(tensorA.Data, indices.Data);
+
+            // Create new Tensor:
+            var z = new Tensor(data, requiresGrad: requiresGrad, operation: this);
+
+            // Add new Tensors to "children" and old Tensors to "parents":
+            Parents.Add(tensorA);
+            tensorA.Children.Add(z);
+            Cache = tensorA;
+
+            //int numIndices = indices.Data.InternalData.Length;
+
+            //// new shape = indices.Shape + [embedDim]
+            //int[] newShape = indices.Shape.Append(tensorA.Shape[1]).ToArray();
+
+            //float[] newData = new float[numIndices * tensorA.Shape[1]];
+
+            //for (int i = 0; i < numIndices; i++)
+            //{
+            //    int idx = (int)indices.Data[i];
+            //    int srcOffset = idx * tensorA.Shape[1];
+            //    int dstOffset = i * tensorA.Shape[1];
+
+            //    Array.Copy(tensorA.Data.InternalData, srcOffset, newData, dstOffset, tensorA.Shape[1]);
+            //}
+
+            return z;
+        }
+
+        public void Backward(IntermediateArray dz, Tensor z)
+        {
+            Cache.Grad = TensorUtilities.ZerosArray(new int[] { Cache.Shape[0], Cache.Shape[1] });
+
+            Tensor a = Cache;
+
+            // Find gradients relative to "a", and pass it downstream:
+            if (a.RequiresGrad)
+            {
+                // Add upstream gradients to [index] part of da.
+                IntermediateArray da = a.Data.ZerosLike();
+
+                int numIndices = Cache.Data.InternalData.Length;
+
+                for (int i = 0; i < numIndices; i++)
+                {
+                    int idx = (int)Cache.Data.InternalData[i];
+
+                    for (int j = 0; j < Cache.Shape[1]; j++)
+                        Cache.Grad.InternalData[idx * Cache.Shape[1] + j] +=
+                            da.InternalData[i * Cache.Shape[1] + j];
+                }
 
                 a.Backward(da, z);
             }

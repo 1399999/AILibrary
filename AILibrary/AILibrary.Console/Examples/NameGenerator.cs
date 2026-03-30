@@ -72,6 +72,11 @@ public static class NameGenerator
             //Tensor ix = new Tensor(IntermediateArray.RandInt(0, xtr.Shape[0], new int[] { 32 }));
             Tensor ix = new Tensor(SystemModel.Ix);
             //Console.WriteLine(ix); // CORRECT
+
+            // forward pass
+            Tensor emb = neuralNet[xtr[ix]]; // (32, 3, 10)
+            //Console.WriteLine(xtr[ix]); // CORRECT
+            //Console.WriteLine(emb); // CORRECT
         }
 
         //var emb = blockSizeWords.IndexInto(neuralNet.Data);

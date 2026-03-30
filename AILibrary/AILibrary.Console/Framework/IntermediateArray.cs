@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace AILibrary.Framework;
+﻿namespace AILibrary.Framework;
 
 public class IntermediateArray
 {
@@ -1684,6 +1682,32 @@ public class IntermediateArray
         }
 
         return new IntermediateArray(data: data, shape: shape);
+    }
+
+    public static IntermediateArray Lookup(IntermediateArray embeddingTable, IntermediateArray indices)
+    {
+        // embeddingTable:       [vocabSize, embedDim]
+        // indices: [any shape...]
+        // output:  [indices.Shape..., embedDim]
+
+        int embedDim = embeddingTable.Shape[1];
+        int numIndices = indices.InternalData.Length;
+
+        // new shape = indices.Shape + [embedDim]
+        int[] newShape = indices.Shape.Append(embedDim).ToArray();
+
+        float[] newData = new float[numIndices * embedDim];
+
+        for (int i = 0; i < numIndices; i++)
+        {
+            int idx = (int)indices.InternalData[i];
+            int srcOffset = idx * embedDim;
+            int dstOffset = i * embedDim;
+
+            Array.Copy(embeddingTable.InternalData, srcOffset, newData, dstOffset, embedDim);
+        }
+
+        return new IntermediateArray(shape: newShape, data: newData);
     }
 
     #endregion
