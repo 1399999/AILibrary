@@ -74,32 +74,34 @@ public static class NameGenerator
             //Console.WriteLine(ix); // CORRECT
 
             // forward pass
-            Tensor emb = neuralNet[xtr[ix]]; // (32, 3, 10)
+            Tensor emb = neuralNet[xtr[ix]]; // (32, 3, 10) // FAILURE
             //Console.WriteLine(xtr[ix]); // CORRECT
             //Console.WriteLine(emb); // CORRECT
 
-            Tensor temp = emb.Reshape([-1, 30]);
+            Tensor temp = emb.Reshape([-1, 30]); // SUCCESS
             //Console.WriteLine(temp); // CORRECT
 
-            Tensor temp2 = temp.Matmul(weights1);
+            Tensor temp2 = temp.Matmul(weights1); // SUCCESS
             //Console.WriteLine(temp2); // CORRECT
 
-            Tensor temp3 = temp2 + biases1;
+            Tensor temp3 = temp2 + biases1; // SUCCESS
             //Console.WriteLine(temp3); // CORRECT
 
-            Tensor h = temp3.Tanh();
+            Tensor h = temp3.Tanh(); // SUCCESS
             //Console.WriteLine(temp4); // CORRECT
 
-            var tempLogits = h.Matmul(weights2);
+            var tempLogits = h.Matmul(weights2); // SUCCESS
             //Console.WriteLine(tempLogits); // CORRECT
 
-            var logits = tempLogits + biases2;
+            var logits = tempLogits + biases2; // SUCCESS
             //Console.WriteLine(logits); // CORRECT
 
             //Console.WriteLine(ytr[ix]); // CORRECT
 
-            Tensor loss = logits.CrossEntropy(ytr[ix]);
-            Console.WriteLine(loss);
+            Tensor loss = logits.CrossEntropy(ytr[ix]); // SUCCESS
+            Console.WriteLine(loss); // CORRECT
+
+            loss.Backward();
         }
 
         //var emb = blockSizeWords.IndexInto(neuralNet.Data);

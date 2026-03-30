@@ -633,168 +633,59 @@ public class IntermediateArray
         throw new NotImplementedException("Matmul only implemented for 1D, 2D, and batched ND arrays.");
     }
 
-    /// <summary>
-    /// Returns a new IntermediateArray with the given axes swapped.
-    /// </summary>
-    //public IntermediateArray SwapAxes(int axis1, int axis2)
-    //{
-    //    if (axis1 > Shape.Length && axis2 > Shape.Length)
-    //    {
-    //        throw new ArgumentException();
-    //    }
-
-    //    if (axis1 < 0)
-    //    {
-    //        axis1 += Shape.Length;
-    //    }
-
-    //    if (axis2 < 0)
-    //    {
-    //        axis2 += Shape.Length;
-    //    }
-
-    //    dynamic expandedArray = GetFullList();
-
-    //    int[][] indexes = new int[Shape.Length][];
-
-    //    for (int i = 0; i < Shape.Length; i++)
-    //    {
-    //        indexes[i] = new int[Shape[i]];
-
-    //        for (int j = 0; j < Shape[i]; j++)
-    //        {
-    //            indexes[i][j] = j;
-    //        }
-    //    }
-
-    //    //List<List<int>> newIndexes = new List<List<int>>();
-
-    //    //for (int i = 0; i < indexes.Length; i++)
-    //    //{
-    //    //    newIndexes.Add(new List<int>());
-
-    //    //    if (i != axis1 && i != axis2)
-    //    //    {
-    //    //        for (int j = 0; j < indexes[i].Length; j++)
-    //    //        {
-    //    //            newIndexes[i].Add(indexes[i][j]);
-    //    //        }
-    //    //    }
-
-    //    //    else if (i == axis1)
-    //    //    {
-    //    //        for (int j = 0; j < indexes[axis2].Length; j++)
-    //    //        {
-    //    //            newIndexes[i].Add(indexes[axis2][j]);
-    //    //        }
-    //    //    }
-
-    //    //    else if (i == axis2)
-    //    //    {
-    //    //        for (int j = 0; j < indexes[axis1].Length; j++)
-    //    //        {
-    //    //            newIndexes[i].Add(indexes[axis1][j]);
-    //    //        }
-    //    //    }
-    //    //}
-
-    //    for (int i = 0; i < indexes.Length; i++)
-    //    {
-    //        newIndexes.Add(new List<int>());
-
-    //        if (i != axis1 && i != axis2)
-    //        {
-    //            for (int j = 0; j < indexes[i].Length; j++)
-    //            {
-    //                newIndexes[i].Add(indexes[i][j]);
-    //            }
-    //        }
-
-    //        else if (i == axis1)
-    //        {
-    //            for (int j = 0; j < indexes[axis2].Length; j++)
-    //            {
-    //                newIndexes[i].Add(indexes[axis2][j]);
-    //            }
-    //        }
-
-    //        else if (i == axis2)
-    //        {
-    //            for (int j = 0; j < indexes[axis1].Length; j++)
-    //            {
-    //                newIndexes[i].Add(indexes[axis1][j]);
-    //            }
-    //        }
-    //    }
-
-    //    return this;
-    //}
-
-    /// <summary>
-    /// Swap two axes in an N-dimensional array (like NumPy swapaxes).
-    /// </summary>
     public IntermediateArray SwapAxes(int axis1, int axis2)
     {
-        int dims = Shape.Length;
+        // resolve negative axes — mirrors PyTorch behavior
+        // e.g. -1 → last axis, -2 → second to last, etc.
+        if (axis1 < 0) axis1 = Shape.Length + axis1;
+        if (axis2 < 0) axis2 = Shape.Length + axis2;
 
-        if (axis1 < 0)
+        // validate axes after resolving negatives
+        if (axis1 < 0 || axis1 >= Shape.Length)
+            throw new ArgumentOutOfRangeException(nameof(axis1),
+                $"Axis {axis1} is out of range for tensor with {Shape.Length} dimensions.");
+        if (axis2 < 0 || axis2 >= Shape.Length)
+            throw new ArgumentOutOfRangeException(nameof(axis2),
+                $"Axis {axis2} is out of range for tensor with {Shape.Length} dimensions.");
+
+        // if axes are the same, return a copy unchanged
+        if (axis1 == axis2)
+            return new IntermediateArray((float[])InternalData.Clone(), (int[])Shape.Clone());
+
+        // build new shape with the two axes swapped
+        int[] newShape = (int[])Shape.Clone();
+        (newShape[axis1], newShape[axis2]) = (newShape[axis2], newShape[axis1]);
+
+        float[] newData = new float[InternalData.Length];
+
+        int[] outIndices = new int[Shape.Length];
+        for (int flat = 0; flat < newData.Length; flat++)
         {
-            axis1 += dims;
-        }
-
-        if (axis2 < 0)
-        {
-            axis2 += dims;
-        }
-
-        if (axis1 < 0 || axis1 >= dims || axis2 < 0 || axis2 >= dims)
-        {
-            throw new ArgumentException("Axis index out of range.");
-        }
-
-        var newShape = Shape;
-
-        var temp = newShape[axis1];
-        newShape[axis1] = newShape[axis2];
-        newShape[axis2] = temp;
-
-        IntermediateArray output = Shape.Max().Replicate(Shape.Length).ZerosArray();
-
-        for (int i = 0; i < InternalData.Length; i++)
-        {
-            output.InternalData[i] = InternalData[i];
-        }
-
-        var newOutput = newShape.ZerosArray();
-
-        for (int i = 0; i < InternalData.Length; i++)
-        {
-            int[] oldIndex = DeflattenIndex(i, Shape);
-
-            float buffer = output[oldIndex];
-            int buffer2 = oldIndex[axis1];
-
-            int[] newIndex = new int[Shape.Length];
-
-            Array.Copy(oldIndex, newIndex, Shape.Length);
-
-            if (i == 729)
+            // convert flat output index → output multi-index
+            int temp = flat;
+            for (int d = newShape.Length - 1; d >= 0; d--)
             {
-
+                outIndices[d] = temp % newShape[d];
+                temp /= newShape[d];
             }
 
-            newIndex[axis1] = newIndex[axis2];
-            newIndex[axis2] = buffer2;
+            // swap the two axes to get the source multi-index
+            int[] srcIndices = (int[])outIndices.Clone();
+            (srcIndices[axis1], srcIndices[axis2]) = (srcIndices[axis2], srcIndices[axis1]);
 
-            output[oldIndex] = output[newIndex];
-            output[newIndex] = buffer;
+            // convert source multi-index → flat source index
+            int srcFlat = 0;
+            int stride = 1;
+            for (int d = Shape.Length - 1; d >= 0; d--)
+            {
+                srcFlat += srcIndices[d] * stride;
+                stride *= Shape[d];
+            }
 
-            //newOutput = buffer;
+            newData[flat] = InternalData[srcFlat];
         }
 
-        var a = output.Crop(newShape);
-
-        return a;
+        return new IntermediateArray(newData, newShape);
     }
 
     public IntermediateArray Mean()

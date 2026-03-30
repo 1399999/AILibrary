@@ -301,6 +301,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for AddClass");
+
             Tensor a = Cache[0];
             Tensor b = Cache[1];
 
@@ -381,6 +383,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for NegClass");
+
             Tensor a = Cache[0];
 
             // Find gradients relative to "a", and pass it downstream:
@@ -421,6 +425,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for MulClass");
+
             Tensor a = Cache[0];
             Tensor b = Cache[1];
 
@@ -506,6 +512,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for DivClass");
+
             Tensor a = Cache[0];
             Tensor b = Cache[1];
 
@@ -586,6 +594,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for PowClass");
+
             var tensorA = Cache[0];
             var tensorB = Cache[1];
 
@@ -641,6 +651,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for MatMulClass");
+
             Tensor a = Cache[0];
             Tensor b = Cache[1];
 
@@ -710,6 +722,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for ExpClass");
+
             Tensor a = Cache[0];
             IntermediateArray data = cacheExtension;
 
@@ -748,6 +762,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for LogClass");
+
             Tensor a = Cache[0];
 
             // Find gradients relative to "a", and pass it downstream:
@@ -787,6 +803,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for SqrtClass");
+
             Tensor a = Cache[0];
             IntermediateArray data = cacheExtension;
 
@@ -825,6 +843,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for SumClass");
+
             Tensor a = Cache[0];
 
             // Find gradients relative to "a", and pass it downstream:
@@ -876,6 +896,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for MeanClass");
+
             Tensor a = Cache[0];
             int? dim = cacheExtension;
 
@@ -936,6 +958,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for MaxClass");
+
             Tensor a = Cache[0];
             IntermediateArray? data = cacheExtension2;
             int? dim = cacheExtension;
@@ -992,6 +1016,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for VarClass");
+
             Tensor a = Cache[0];
             int? dim = cacheExtension;
 
@@ -1042,6 +1068,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for ReshapeClass");
+
             Tensor a = Cache[0];
 
             // Find gradients relative to "a", and pass it downstream:
@@ -1084,6 +1112,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for TransposeClass");
+
             Tensor a = Cache[0];
             int[]? dims = cacheExtension;
 
@@ -1147,6 +1177,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for CatClass");
+
             List<Tensor> tensors = Cache;
             int dim = cacheExtension;
 
@@ -1215,6 +1247,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for StackClass");
+
             List<Tensor> tensors = Cache;
             int? dim = cacheExtension;
 
@@ -1262,6 +1296,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for MaskedFillClass");
+
             Tensor a = Cache[0];
             dynamic? condition = cacheExtension;
 
@@ -1324,6 +1360,8 @@ public class Tensor
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for SliceClass");
+
             Tensor a = Cache[0];
             dynamic index = cacheExtension != null ? cacheExtension : cacheExtension2;
 
@@ -1359,27 +1397,13 @@ public class Tensor
             tensorA.Children.Add(z);
             Cache = tensorA;
 
-            //int numIndices = indices.Data.InternalData.Length;
-
-            //// new shape = indices.Shape + [embedDim]
-            //int[] newShape = indices.Shape.Append(tensorA.Shape[1]).ToArray();
-
-            //float[] newData = new float[numIndices * tensorA.Shape[1]];
-
-            //for (int i = 0; i < numIndices; i++)
-            //{
-            //    int idx = (int)indices.Data[i];
-            //    int srcOffset = idx * tensorA.Shape[1];
-            //    int dstOffset = i * tensorA.Shape[1];
-
-            //    Array.Copy(tensorA.Data.InternalData, srcOffset, newData, dstOffset, tensorA.Shape[1]);
-            //}
-
             return z;
         }
 
         public void Backward(IntermediateArray dz, Tensor z)
         {
+            Console.WriteLine("Backward for IndexIntoClass");
+
             Cache.Grad = TensorUtilities.ZerosArray(new int[] { Cache.Shape[0], Cache.Shape[1] });
 
             Tensor a = Cache;

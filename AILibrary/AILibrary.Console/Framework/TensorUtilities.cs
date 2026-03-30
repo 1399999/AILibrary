@@ -125,15 +125,15 @@ public static class TensorUtilities
 
     public static Tensor Tanh(this Tensor tensor) 
     {
-        var negTensor = -tensor;
+        var negTensor = -tensor; // SUCCESS
 
-        var expx = tensor.Exp();
-        var negexpx = negTensor.Exp();
+        var expx = tensor.Exp(); // SUCCESS
+        var negexpx = negTensor.Exp(); // SUCCESS
 
-        var a = expx - negexpx;
-        var b = expx + negexpx;
+        var a = expx - negexpx;  // SUCCESS MUL AND ADD
+        var b = expx + negexpx;  // SUCCESS
 
-        return a / b;
+        return a / b;  // SUCCESS
     }
 
     public static Tensor CrossEntropy(this Tensor logits, IntermediateArray labels)
@@ -150,14 +150,14 @@ public static class TensorUtilities
 
     public static Tensor CrossEntropy(this Tensor logits, Tensor labels)
     {
-        var counts = logits.Exp();
-        var prob = counts / counts.Sum(1, keepdims: true);
+        var counts = logits.Exp(); // SUCCESS
+        var prob = counts / counts.Sum(1, keepdims: true); // SUCCESS,  // SUCCESS
 
-        var abcd = prob[[ArangeInt(32), labels.Data]];
-        var efgh = abcd.Log();
-        var ijkl = efgh.Mean();
+        var abcd = prob[[ArangeInt(32), labels.Data]]; // SUCCESS
+        var efgh = abcd.Log(); // SUCCESS
+        var ijkl = efgh.Mean(); // SUCCESS
 
-        return -ijkl;
+        return -ijkl;  // SUCCESS
     }
 
     public static IntermediateArray ArangeInt(this int ender) // 0 -> ender
