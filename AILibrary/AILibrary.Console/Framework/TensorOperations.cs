@@ -355,6 +355,8 @@ public class Tensor
 
                 b.Backward(db, z);
             }
+
+            Console.WriteLine("Withdrawl for AddClass");
         }
     }
 
@@ -394,6 +396,8 @@ public class Tensor
                 var da = -dz;
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for NegClass");
         }
     }
 
@@ -481,6 +485,8 @@ public class Tensor
 
                 b.Backward(db, z);
             }
+
+            Console.WriteLine("Withdrawl for MulClass");
         }
     }
 
@@ -568,6 +574,8 @@ public class Tensor
 
                 b.Backward(db, z);
             }
+
+            Console.WriteLine("Withdrawl for DivClass");
         }
     }
 
@@ -620,6 +628,8 @@ public class Tensor
 
                 tensorA.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for PowClass");
         }
     }
 
@@ -691,6 +701,8 @@ public class Tensor
 
                 b.Backward(db, z);
             }
+
+            Console.WriteLine("Withdrawl for MatMulClass");
         }
     }
 
@@ -734,6 +746,8 @@ public class Tensor
                 var da = data * dz;
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for ExpClass");
         }
     }
 
@@ -773,6 +787,8 @@ public class Tensor
                 var da = a.Data.OnesLike() / a.Data * dz;
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for LogClass");
         }
     }
 
@@ -815,6 +831,8 @@ public class Tensor
                 var da =  ((data.OnesLike() / data) * (1/2)) * dz;
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for SqrtClass");
         }
     }
 
@@ -854,6 +872,8 @@ public class Tensor
                 var da = a.Data.OnesLike() * dz;
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for SumClass");
         }
     }
 
@@ -916,9 +936,11 @@ public class Tensor
                 {
                     da = da / a.Shape[^1];
                 }
-                
+
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for MeanClass");
         }
     }
 
@@ -985,6 +1007,8 @@ public class Tensor
 
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for MaxClass");
         }
     }
 
@@ -1040,6 +1064,8 @@ public class Tensor
 
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for VarClass");
         }
     }
 
@@ -1081,6 +1107,8 @@ public class Tensor
 
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for ReshapeClass");
         }
     }
 
@@ -1126,6 +1154,8 @@ public class Tensor
 
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for TransposeClass");
         }
     }
 
@@ -1195,6 +1225,8 @@ public class Tensor
                     tensors[i].Backward(di, z);
                 }
             }
+
+            Console.WriteLine("Withdrawl for CatClass");
         }
     }
 
@@ -1265,6 +1297,8 @@ public class Tensor
                     tensors[i].Backward(di, z);
                 }
             }
+
+            Console.WriteLine("Withdrawl for StackClass");
         }
     }
 
@@ -1309,6 +1343,8 @@ public class Tensor
 
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for MaskedFillClass");
         }
     }
 
@@ -1374,13 +1410,15 @@ public class Tensor
 
                 a.Backward(da, z);
             }
+
+            Console.WriteLine("Withdrawl for SliceClass");
         }
     }
 
     private class IndexIntoClass()
     {
         public List<Tensor> Parents { get; set; } = new List<Tensor>();
-        public Tensor? Cache { get; set; }
+        public List<Tensor> Cache { get; set; } = new List<Tensor>();
 
         public Tensor Forward(Tensor tensorA, Tensor indices)
         {
@@ -1395,7 +1433,8 @@ public class Tensor
             // Add new Tensors to "children" and old Tensors to "parents":
             Parents.Add(tensorA);
             tensorA.Children.Add(z);
-            Cache = tensorA;
+            Cache.Add(tensorA);
+            Cache.Add(indices);
 
             return z;
         }
@@ -1404,28 +1443,56 @@ public class Tensor
         {
             Console.WriteLine("Backward for IndexIntoClass");
 
-            Cache.Grad = TensorUtilities.ZerosArray(new int[] { Cache.Shape[0], Cache.Shape[1] });
-
-            Tensor a = Cache;
+            Tensor embeddingTable = Cache[0];
+            Tensor indices = Cache[1];
 
             // Find gradients relative to "a", and pass it downstream:
-            if (a.RequiresGrad)
+            if (embeddingTable.RequiresGrad)
             {
-                // Add upstream gradients to [index] part of da.
-                IntermediateArray da = a.Data.ZerosLike();
+                float[] gradData = new float[embeddingTable.Data.InternalData.Length];
 
-                int numIndices = Cache.Data.InternalData.Length;
+                // multiplier = product of all dims after the first in embeddingTable
+                int multiplier = 1;
+                for (int j = 1; j < embeddingTable.Shape.Length; j++)
+                    multiplier *= embeddingTable.Shape[j];
 
-                for (int i = 0; i < numIndices; i++)
+                // total number of index lookups performed in forward
+                int multiplierIndices = 1;
+                for (int j = 0; j < indices.Shape.Length; j++)
+                    multiplierIndices *= indices.Shape[j];
+
+                // dzOffset tracks exactly where we are in dz.InternalData
+                // it advances by multiplier each iteration, mirroring how
+                // the forward pass advanced through the output
+                int dzOffset = 0;
+
+                for (int i = 0; i < multiplierIndices; i++)
                 {
-                    int idx = (int)Cache.Data.InternalData[i];
+                    int index = (int)indices.Data.InternalData[i];
 
-                    for (int j = 0; j < Cache.Shape[1]; j++)
-                        Cache.Grad.InternalData[idx * Cache.Shape[1] + j] +=
-                            da.InternalData[i * Cache.Shape[1] + j];
+                    // resolve negative indices
+                    if (index < 0)
+                        index = embeddingTable.Shape[0] + index;
+
+                    if (index < 0 || index >= embeddingTable.Shape[0])
+                        throw new IndexOutOfRangeException(
+                            $"Index {(int)indices.Data.InternalData[i]} is out of range for embedding table with {embeddingTable.Shape[0]} rows.");
+
+                    int firstSelected = index * multiplier;
+
+                    for (int j = 0; j < multiplier; j++)
+                        gradData[firstSelected + j] += dz.InternalData[dzOffset + j];
+
+                    // advance through dz by exactly how many elements we just processed
+                    dzOffset += multiplier;
                 }
 
-                a.Backward(da, z);
+                //return new IntermediateArray(gradData, embeddingTable.Shape);
+                //}
+
+                embeddingTable.Backward(new IntermediateArray(gradData, embeddingTable.Shape), z);
+
+                Console.WriteLine("Withdrawl for IndexIntoClass");
             }
         }
     }

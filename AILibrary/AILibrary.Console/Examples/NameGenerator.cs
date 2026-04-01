@@ -74,7 +74,7 @@ public static class NameGenerator
             //Console.WriteLine(ix); // CORRECT
 
             // forward pass
-            Tensor emb = neuralNet[xtr[ix]]; // (32, 3, 10) // FAILURE
+            Tensor emb = neuralNet[xtr[ix]]; // (32, 3, 10) // SUCCESS
             //Console.WriteLine(xtr[ix]); // CORRECT
             //Console.WriteLine(emb); // CORRECT
 

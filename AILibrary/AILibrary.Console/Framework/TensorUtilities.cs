@@ -298,11 +298,12 @@ public static class TensorUtilities
     {
         int[] output = new int[array.Length - 1];
 
-        for (int i = 0; i < array.Length; i++)
+        for (int i = 0, j = 0; i < array.Length; i++)
         {
             if (array[i] != item)
             {
-                output[i] = array[i];
+                output[j] = array[i];
+                j++;
             }
         }
 
