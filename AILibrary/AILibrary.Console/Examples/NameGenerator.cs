@@ -50,8 +50,14 @@ public static class NameGenerator
         //Console.WriteLine(weights2.Print(0, 1)); // CORRECT
         //Console.WriteLine(biases2.Print(0, 1)); // CORRECT
 
-        //long paramaters = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
-        //Console.WriteLine(paramaters); // CORRECT
+        List<Tensor> paramaters = new List<Tensor>() 
+        {
+            neuralNet,
+            weights1, biases1,
+            weights2, biases2,
+        };
+        //long paramatersLong = neuralNet.Nelement() + weights1.Nelement() + biases1.Nelement() + weights2.Nelement() + biases2.Nelement();
+        //Console.WriteLine(paramatersLong); // CORRECT
 
         Tensor lre = TensorUtilities.Linspace(-3, 0, 1000);
 
@@ -65,7 +71,7 @@ public static class NameGenerator
         var lossi = new float[STEP_SIZE];
         var stepi = new int[STEP_SIZE];
 
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 10; i++)
         {
             // minibatch construct
 
@@ -101,7 +107,21 @@ public static class NameGenerator
             Tensor loss = logits.CrossEntropy(ytr[ix]); // SUCCESS
             Console.WriteLine(loss); // CORRECT
 
+            for (int j = 0; j < paramaters.Count; j++)
+            {
+                paramaters[j].Grad = TensorUtilities.Value(0, paramaters[j].Grad.Shape);
+            }
+
             loss.Backward();
+
+            //float lr = i < 100000F ? 0.01F : 0.001F;
+
+            float lr = 0.01F;
+
+            for (int j = 0; j < paramaters.Count; j++)
+            {
+                paramaters[j].Data += (paramaters[j].Grad * -lr);
+            }
         }
 
         //var emb = blockSizeWords.IndexInto(neuralNet.Data);

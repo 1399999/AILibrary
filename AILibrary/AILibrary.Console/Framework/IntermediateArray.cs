@@ -75,6 +75,7 @@ public class IntermediateArray
     }
 
     public static IntermediateArray operator +(IntermediateArray a, IntermediateArray b) => Add(a, b);
+    public static IntermediateArray operator +(IntermediateArray a, float b) => Add(a, new IntermediateArray(b.ValueFloat(a.Shape)));
 
     public static IntermediateArray Subtract(IntermediateArray a, IntermediateArray b)
     {
@@ -94,6 +95,7 @@ public class IntermediateArray
     }
 
     public static IntermediateArray operator -(IntermediateArray a, IntermediateArray b) => Subtract(a, b);
+    public static IntermediateArray operator -(IntermediateArray a, float b) => Subtract(a, new IntermediateArray(b.ValueFloat(a.Shape)));
 
     public IntermediateArray Negate()
     {
