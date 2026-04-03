@@ -1,16 +1,19 @@
-﻿int input = SystemConsole.ConvertIntoOptionsMode(["AutogradTest", "Credits", "Exit"], "Options/Tests to run: ");
-
-switch (input)
+﻿while (true)
 {
-    case 0:
-        AutogradTest.Test();
-        break;
+    int input = SystemConsole.ConvertIntoOptionsMode(["AutogradTest", "Credits", "Exit"], "Options/Tests to run: ");
 
-    case 1:
-        AutogradTest.Test();
-        break;
+    switch (input)
+    {
+        case 0:
+            AutogradTest.Test();
+            break;
 
-    default:
-        Environment.Exit(0);
-        break;
+        case 1:
+            SystemConsole.DisplayCredits();
+            break;
+
+        default:
+            Environment.Exit(0);
+            break;
+    }
 }

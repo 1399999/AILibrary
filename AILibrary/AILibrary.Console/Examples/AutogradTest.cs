@@ -14,6 +14,9 @@ public static class AutogradTest
 
         Tensor? z = null;
 
+        Console.Clear();
+        Console.WriteLine("{Iteration}: {Loss}");
+
         for (int i = 0; i < 4000; i++)
         {
             z = x.Matmul(w1);
@@ -24,6 +27,11 @@ public static class AutogradTest
 
             var loss = z.CrossEntropy(y);
 
+            if (i % 20 == 0)
+            {
+                Console.WriteLine($"{i}: {loss.ToItem().Substring(2, loss.ToItem().Length - 4)}");
+            }
+
             loss.Backward();
 
             w1 = w1 - new Tensor(w1.Grad * 0.005F);
@@ -32,5 +40,7 @@ public static class AutogradTest
 
             loss.ZeroGradTree();
         }
+
+        Console.ReadLine();
     }
 }

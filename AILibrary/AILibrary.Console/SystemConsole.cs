@@ -67,4 +67,6 @@ public class SystemConsole
             }
         }
     }
+
+    public static void DisplayCredits() => ConvertIntoOptionsMode(["Exit"], "(C) Mikhail Zhebrunov 2025-2026\n\nA realitively lightwight AI library on CPU with no optimization");
 }
