@@ -152,7 +152,7 @@ public static class TensorUtilities
         var counts = logits.Exp();
         var prob = counts / counts.Sum(1, keepdims: true);
 
-        var logLosses = prob[[ArangeInt(tempmul), labels]];
+        var logLosses = prob[[ArangeInt(tempmul), labels]].Log();
 
         return -logLosses.Sum() / tempmul;
     }

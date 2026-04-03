@@ -2,7 +2,7 @@
 
 public static class AutogradTest
 {
-    public static void Test(int seed = int.MaxValue)
+    public static void Test()
     {
         // Instantiate input and output:
         Tensor x = TensorUtilities.CreateRandomNeurons([8, 4, 5], false);
@@ -14,7 +14,7 @@ public static class AutogradTest
 
         Tensor? z = null;
 
-        for (int i = 0; i < 400; i++)
+        for (int i = 0; i < 4000; i++)
         {
             z = x.Matmul(w1);
             z = z.ReLU();
@@ -23,8 +23,6 @@ public static class AutogradTest
             z = z.Matmul(w3);
 
             var loss = z.CrossEntropy(y);
-
-            Console.WriteLine($"{i}: {loss.ToItem().Substring(2, loss.ToItem().Length - 4)}");
 
             loss.Backward();
 
