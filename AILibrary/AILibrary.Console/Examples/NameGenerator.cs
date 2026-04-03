@@ -116,7 +116,7 @@ public static class NameGenerator
 
             //float lr = i < 100000F ? 0.01F : 0.001F;
 
-            float lr = 0.01F;
+            float lr = 0.005F;
 
             for (int j = 0; j < paramaters.Count; j++)
             {

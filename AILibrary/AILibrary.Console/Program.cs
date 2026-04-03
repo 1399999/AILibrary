@@ -1,6 +1,5 @@
 ﻿// Code for demonstrational purposes:
 
-
-NameGenerator.GenerateWord();
+AutogradTest.Test();
 
 // BigramRandomWordGenerator.RunExample();

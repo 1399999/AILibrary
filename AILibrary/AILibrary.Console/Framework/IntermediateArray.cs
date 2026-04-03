@@ -499,7 +499,7 @@ public class IntermediateArray
             }
         }
 
-        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveIndex(axis) : Shape.InsertItem(axis, 1));
     }
 
     /// <summary>
@@ -539,7 +539,7 @@ public class IntermediateArray
             }
         }
 
-        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveIndex(axis) : Shape.InsertItem(axis, 1));
     }
 
     /// <summary>
@@ -548,91 +548,67 @@ public class IntermediateArray
     /// </summary>
     public IntermediateArray Matmul(IntermediateArray other) // NOT REFACTORED
     {
-        // --- Handle 1D @ 1D (dot product) ---
-        if (Shape.Length == 1 && other.Shape.Length == 1)
+        // validate that both arrays are at least 2D
+        if (Shape.Length < 2)
+            throw new ArgumentException("Left operand must be at least 2D.");
+        if (other.Shape.Length < 2)
+            throw new ArgumentException("Right operand must be at least 2D.");
+
+        // validate inner dimensions match
+        // (..., M, K) @ (..., K, N) → (..., M, N)
+        int M = Shape[Shape.Length - 2];
+        int K = Shape[Shape.Length - 1];
+        int K2 = other.Shape[other.Shape.Length - 2];
+        int N = other.Shape[other.Shape.Length - 1];
+
+        if (K != K2)
+            throw new ArgumentException(
+                $"Inner dimensions must match: {K} != {K2}.");
+
+        // validate batch dimensions match
+        int[] batchShape = Shape.Take(Shape.Length - 2).ToArray();
+        int[] otherBatchShape = other.Shape.Take(other.Shape.Length - 2).ToArray();
+
+        if (!batchShape.SequenceEqual(otherBatchShape))
+            throw new ArgumentException(
+                $"Batch dimensions must match: [{string.Join(", ", batchShape)}] != [{string.Join(", ", otherBatchShape)}].");
+
+        // compute total number of batches
+        int batchSize = batchShape.Length == 0 ? 1 : batchShape.Aggregate(1, (a, b) => a * b);
+
+        // output shape: batchShape + [M, N]
+        int[] newShape = batchShape.Append(M).Append(N).ToArray();
+        float[] newData = new float[batchSize * M * N];
+
+        // stride of each 2D matrix in the flat data
+        int strideA = M * K;
+        int strideB = K * N;
+        int strideC = M * N;
+
+        // loop over each batch
+        for (int b = 0; b < batchSize; b++)
         {
-            if (Shape[0] != other.Shape[0])
-                throw new ArgumentException("Shapes not aligned for 1D dot product.");
-            float sum = 0;
-            for (int i = 0; i < Shape[0]; i++)
-                sum += this.InternalData[i] * other.InternalData[i];
-            return new IntermediateArray(new float[] { sum }, new int[] { });
-        }
+            int offsetA = b * strideA;
+            int offsetB = b * strideB;
+            int offsetC = b * strideC;
 
-        // --- Handle 2D @ 2D (matrix multiplication) ---
-        if (Shape.Length == 2 && other.Shape.Length == 2)
-        {
-            int m = Shape[0];   // rows of A
-            int k1 = Shape[1];  // cols of A
-            int k2 = other.Shape[0]; // rows of B
-            int n = other.Shape[1];  // cols of B
-
-            if (k1 != k2)
-                throw new ArgumentException("Shapes not aligned for matmul: " +
-                                            $"({m},{k1}) x ({k2},{n})");
-
-            float[] result = new float[m * n];
-            for (int i = 0; i < m; i++)
+            // standard matrix multiplication: C = A @ B
+            for (int i = 0; i < M; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (int j = 0; j < N; j++)
                 {
-                    float sum = 0;
-                    for (int k = 0; k < k1; k++)
-                    {
-                        sum += this.InternalData[i * k1 + k] * other.InternalData[k * n + j];
-                    }
-                    result[i * n + j] = sum;
+                    float sum = 0f;
+
+                    for (int k = 0; k < K; k++)
+                        sum += InternalData[offsetA + i * K + k] *
+                               other.InternalData[offsetB + k * N + j];
+
+                    newData[offsetC + i * N + j] = sum;
                 }
             }
-
-            return new IntermediateArray(result, new int[] { m, n });
         }
 
-        // --- Handle N-D (batched matmul) ---
-        // All dimensions except last two must broadcast
-        if (Shape.Length >= 2 && other.Shape.Length >= 2)
-        {
-            int[] batchShapeA = Shape.Take(Shape.Length - 2).ToArray();
-            int[] batchShapeB = other.Shape.Take(other.Shape.Length - 2).ToArray();
-            int[] broadcastShape = BroadcastShapes(batchShapeA, batchShapeB);
-
-            int m = Shape[Shape.Length - 2];
-            int k1 = Shape[Shape.Length - 1];
-            int k2 = other.Shape[other.Shape.Length - 2];
-            int n = other.Shape[other.Shape.Length - 1];
-
-            if (k1 != k2)
-                throw new ArgumentException("Shapes not aligned for batched matmul.");
-
-            int batchSize = broadcastShape.Aggregate(1, (a, b) => a * b);
-            float[] result = new float[batchSize * m * n];
-
-            for (int b = 0; b < batchSize; b++)
-            {
-                // For simplicity: assume arrays already broadcast-compatible
-                int offsetA = b * m * k1;
-                int offsetB = b * k2 * n;
-                int offsetR = b * m * n;
-
-                for (int i = 0; i < m; i++)
-                {
-                    for (int j = 0; j < n; j++)
-                    {
-                        float sum = 0;
-                        for (int k = 0; k < k1; k++)
-                        {
-                            sum += this.InternalData[offsetA + i * k1 + k] *
-                                   other.InternalData[offsetB + k * n + j];
-                        }
-                        result[offsetR + i * n + j] = sum;
-                    }
-                }
-            }
-
-            return new IntermediateArray(result, broadcastShape.Concat(new int[] { m, n }).ToArray());
-        }
-
-        throw new NotImplementedException("Matmul only implemented for 1D, 2D, and batched ND arrays.");
+        return new IntermediateArray(newData, newShape);
     }
 
     public IntermediateArray SwapAxes(int axis1, int axis2)
@@ -734,7 +710,7 @@ public class IntermediateArray
             output[i] /= Shape[axis];
         }
 
-        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveIndex(axis) : Shape.InsertItem(axis, 1));
     }
 
     /// <summary>
@@ -782,7 +758,7 @@ public class IntermediateArray
             }
         }
 
-        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveIndex(axis) : Shape.InsertItem(axis, 1));
     }
 
     /// <summary>
@@ -830,7 +806,7 @@ public class IntermediateArray
             }
         }
 
-        return new IntermediateArray(output, !keepdims ? Shape.RemoveItem(Shape[axis]) : Shape.InsertItem(axis, 1));
+        return new IntermediateArray(output, !keepdims ? Shape.RemoveIndex(axis) : Shape.InsertItem(axis, 1));
     }
 
     /// <summary>
@@ -1388,14 +1364,9 @@ public class IntermediateArray
     /// (2*7*6)+(4*6)+1, (2*7*6)+(5*6)+1, 
     /// (3*7*6)+(4*6)+1, (3*7*6)+(5*6)+1]
     /// </returns>
-    /// <exception cref="Exception"></exception>
+    /// <exception cref="Exception">NO BROADCASTING</exception>
     public IntermediateArray Select(List<IntermediateArray> arrays) // REFACTORED
     {
-        if (arrays.Count != Shape.Length)
-        {
-            throw new Exception();
-        }
-
         long[][] indexes = new long[arrays[0].InternalData.Length][];
 
         for (int i = 0; i < arrays[0].InternalData.Length; i++)
@@ -1563,20 +1534,6 @@ public class IntermediateArray
         return output;
     }
 
-    public static IntermediateArray RandInt(int low, int high, params int[] shape)
-    {
-        int totalElements = shape.Aggregate(1, (a, b) => a * b);
-        float[] data = new float[totalElements];
-        Random rng = new Random();
-
-        for (int i = 0; i < totalElements; i++)
-        {
-            data[i] = rng.Next(low, high);
-        }
-
-        return new IntermediateArray(data: data, shape: shape);
-    }
-
     public static IntermediateArray Lookup(IntermediateArray embeddingTable, IntermediateArray indices)
     {
         List<float> output = new();
@@ -1627,9 +1584,7 @@ public class IntermediateArray
     public override string ToString()
     {
         var sb = new StringBuilder();
-        sb.Append("tensor(");
         FormatRecursive(sb, 0, new int[Shape.Length], 0);
-        sb.Append(")");
         return sb.ToString();
     }
 

@@ -48,17 +48,21 @@ public class Tensor
     /// <summary>
     /// Prints out the data of the tensor.
     /// </summary>
-    public override string ToString() => Data.ToString();
+    public override string ToString() => "Tensor(" + Data.ToString() + ")";
+    /// <summary>
+    /// Prints out the data of the tensor.
+    /// </summary>
+    public string ToItem() => Data.ToString();
 
     /// <summary>
     /// Prints out the data of the tensor.
     /// </summary>
-    public string Print() => Data.ToString();
+    public string Print() => "Tensor(" + Data.ToString() + ")";
 
     /// <summary>
     /// Prints out the data of the tensor selectively.
     /// </summary>
-    public string Print(int startIndex, int endIndex) => Data.Select(startIndex, endIndex).ToString();
+    public string Print(int startIndex, int endIndex) => "Tensor(" + Data.Select(startIndex, endIndex).ToString() + ")";
 
     /// <summary>
     /// Performs the backpropagation with gradient descent from current tensor. Will fill every tensor's "grad" attribute with gradients relative to the current Tensor.
@@ -71,7 +75,7 @@ public class Tensor
     {
         if (!RequiresGrad)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("This tensor has requiresGrad set to false");
         }
 
         if (grad == null)
@@ -79,7 +83,7 @@ public class Tensor
             grad = Data.OnesLike();
         }
 
-        Grad = Grad + grad;
+        Grad += grad;
 
         if (z != null)
         {
@@ -255,8 +259,6 @@ public class Tensor
     /// </summary>
     /// <returns>Returns the exponentiated Tensor.</returns>
     public Tensor Log() => new LogClass().Forward(this);
-
-    public float[] ToItem() => Data.InternalData;
 
     public Tensor this[IntermediateArray array]
     {
@@ -754,7 +756,7 @@ public class Tensor
             if (a.RequiresGrad)
             {
                 // d/da(ln(a)) = (1/a), apply the chain rule to the derivative of the natural log:
-                var da = a.Data.OnesLike() / a.Data * dz;
+                var da = (a.Data.OnesLike() / a.Data) * dz;
                 a.Backward(da, z);
             }
         }

@@ -1,4 +1,6 @@
-﻿namespace AILibrary.Framework;
+﻿using System.Xml;
+
+namespace AILibrary.Framework;
 
 public static class TensorUtilities
 {
@@ -138,26 +140,42 @@ public static class TensorUtilities
 
     public static Tensor CrossEntropy(this Tensor logits, IntermediateArray labels)
     {
+        int tempmul = 1;
+
+        for (int i = 0; i < logits.Shape.Length - 1; i++)
+        {
+            tempmul *= logits.Shape[i];
+        }
+
+        logits = logits.Reshape([tempmul, logits.Shape[^1]]);
+
         var counts = logits.Exp();
         var prob = counts / counts.Sum(1, keepdims: true);
 
-        var abcd = prob[[ArangeInt(32), labels]];
-        var efgh = abcd.Log();
-        var ijkl = efgh.Mean();
+        var logLosses = prob[[ArangeInt(tempmul), labels]];
 
-        return -ijkl;
+        return -logLosses.Sum() / tempmul;
     }
 
     public static Tensor CrossEntropy(this Tensor logits, Tensor labels)
     {
-        var counts = logits.Exp(); // SUCCESS
-        var prob = counts / counts.Sum(1, keepdims: true); // SUCCESS,  // SUCCESS
+        int tempmul = 1;
 
-        var abcd = prob[[ArangeInt(32), labels.Data]]; // SUCCESS
-        var efgh = abcd.Log(); // SUCCESS
-        var ijkl = efgh.Mean(); // SUCCESS
+        for (int i = 0; i < logits.Shape.Length - 1; i++)
+        {
+            tempmul *= logits.Shape[i];
+        }
 
-        return -ijkl;  // SUCCESS
+        logits = logits.Reshape([tempmul, logits.Shape[^1]]);
+
+        var counts = logits.Exp();
+        var prob = counts / counts.Sum(1, keepdims: true);
+
+        var abcd = prob[[ArangeInt(tempmul), labels.Data]];
+        var efgh = abcd.Log();
+        var ijkl = efgh.Mean();
+
+        return -ijkl;
     }
 
     public static IntermediateArray ArangeInt(this int ender) // 0 -> ender
@@ -310,6 +328,22 @@ public static class TensorUtilities
         return output;
     }
 
+    public static int[] RemoveIndex(this int[] array, int index)
+    {
+        int[] output = new int[array.Length - 1];
+
+        for (int i = 0, j = 0; i < array.Length; i++)
+        {
+            if (i != index)
+            {
+                output[j] = array[i];
+                j++;
+            }
+        }
+
+        return output;
+    }
+
     public static int[] InsertItem(this int[] array, int index, int item)
     {
         int[] output = new int[array.Length];
@@ -355,5 +389,94 @@ public static class TensorUtilities
         output[^1] = num2;
 
         return new Tensor(output);
+    }
+
+    public static Tensor CreateRandomNeurons(int[] shape, bool useSeed, int seed = 0)
+    {
+        int expandedShape = 1;
+
+        for (int i = 0; i < shape.Length; i++)
+        {
+            expandedShape *= shape[i];
+        }
+
+        float[] output = new float[expandedShape];
+
+        for (int i = 0; i < expandedShape; i++)
+        {
+            output[i] = NextStandardNormal();
+        }
+
+        return new Tensor(new IntermediateArray(output, shape));
+    }
+
+    public static IntermediateArray CreateRandomNeuronsArray(int[] shape, bool useSeed, int seed = 0)
+    {
+        int expandedShape = 1;
+
+        for (int i = 0; i < shape.Length; i++)
+        {
+            expandedShape *= shape[i];
+        }
+
+        float[] output = new float[expandedShape];
+
+        for (int i = 0; i < expandedShape; i++)
+        {
+            output[i] = NextStandardNormal();
+        }
+
+        return new IntermediateArray(output, shape);
+    }
+
+    static float NextStandardNormal()
+    {
+        Random _rand = new Random();
+
+        float u, v, s;
+        do
+        {
+            u = (float)_rand.NextDouble() * 2.0F - 1.0F; // uniform(-1, 1)
+            v = (float)_rand.NextDouble() * 2.0F - 1.0F;
+            s = u * u + v * v;
+        } while (s >= 1.0 || s == 0);
+
+        float multiplier = (float)Math.Sqrt(-2.0 * Math.Log(s) / s);
+
+        return u * multiplier; // standard normal (mean=0, std=1)
+    }
+
+    public static IntermediateArray RandInt(int low, int high, params int[] shape)
+    {
+        int totalElements = shape.Aggregate(1, (a, b) => a * b);
+        float[] data = new float[totalElements];
+        Random rng = new Random();
+
+        for (int i = 0; i < totalElements; i++)
+        {
+            data[i] = rng.Next(low, high);
+        }
+
+        return new IntermediateArray(data: data, shape: shape);
+    }
+
+    public static Tensor ReLU(this Tensor input)
+    {
+        var output = new float[input.Data.InternalData.Length];
+
+        for (int i = 0; i < input.Data.InternalData.Length; i++)
+        {
+            if (input.Data.InternalData[i] > 0)
+            {
+                output[i] = input.Data.InternalData[i];
+            }
+
+            else
+            {
+                output[i] = 0;
+            }
+        }
+
+        return new Tensor(new IntermediateArray(output, input.Shape));
     }
 }
